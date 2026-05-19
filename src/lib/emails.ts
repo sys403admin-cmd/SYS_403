@@ -37,21 +37,21 @@ export const getMatrixEmailTemplate = (order: Omit<CustomOrder, 'id' | 'date' | 
             
             <p style="font-size: 16px; font-weight: bold; color: #fff;">
               ${isInternal 
-                ? `CAPO_TERMINAL: Se ha detectado una nueva inyección de ADN en la red.` 
-                : `Tu ADN ha sido interceptado y está siendo procesado en el bunker.`}
+                ? `CAPO_TERMINAL: Se ha detectado una nueva inyección de ADN. El bloque es total sólido.` 
+                : `Tu ADN ha sido interceptado. El registro es total sólido en nuestro bunker.`}
             </p>
 
-            <div class="data-box">
-              <span class="label">SUJETO_IDENTIFICADO</span>
-              <span class="value">${order.name}</span>
-              
-              <span class="label">CANAL_COMUNICACION</span>
-              <span class="value">${order.whatsapp}</span>
-              
-              <span class="label">ESPECIFICACIONES_TECNICAS</span>
-              <span class="value">${order.garmentType} / TALLA ${order.size} / HEX ${order.garmentColor}</span>
+            <div className="data-box">
+              <span className="label">SUJETO_IDENTIFICADO</span>
+              <span className="value">${order.name}</span>
 
-              <span class="label">FRAGMENTOS_INYECTADOS</span>
+              <span className="label">CANAL_COMUNICACION</span>
+              <span className="value">${order.whatsapp}</span>
+
+              <span className="label">ESPECIFICACIONES_SOLIDAS</span>
+              <span className="value">${order.garmentType} / TALLA ${order.size} / HEX ${order.garmentColor}</span>
+
+              <span className="label">FRAGMENTOS_INYECTADOS</span>
               <div style="margin-top: 10px;">
                 ${order.designs.map(d => `<img src="${d.url}" class="design-preview" />`).join('')}
               </div>
@@ -59,8 +59,8 @@ export const getMatrixEmailTemplate = (order: Omit<CustomOrder, 'id' | 'date' | 
 
             <p style="opacity: 0.8; font-style: italic;">
               ${isInternal 
-                ? `Proceder con el análisis de viabilidad técnica. No se permiten filtraciones.` 
-                : `Nuestro equipo técnico está analizando el glitch. Serás contactado vía WhatsApp para el sellado final.`}
+                ? `Proceder con el análisis. El sistema no permite filtraciones. Estructura total sólida.` 
+                : `Nuestro equipo está analizando el glitch. Estructura total sólida. Serás contactado vía WhatsApp para el sellado final.`}
             </p>
           </div>
 

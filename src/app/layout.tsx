@@ -19,10 +19,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://sys403.online"),
   title: "SYS_403 | Forjar Tu ADN",
-  description: "Lo que el sistema te niega, nosotros lo convertimos en estética. SYS_403 es el umbral que otros no pueden cruzar. Streetwear exclusivo // Acceso Denegado.",
+  description: "Lo que el sistema te niega, nosotros lo convertimos en estética. SYS_403 es un bloque total sólido de streetwear exclusivo // Acceso Denegado.",
   openGraph: {
     title: "SYS_403 | Forjar Tu ADN",
-    description: "No somos una marca de ropa. Somos un código de error con identidad propia. Viste el glitch.",
+    description: "No somos una marca de ropa. Somos un código de error total sólido con identidad propia. Viste el glitch.",
     url: "https://sys403.online",
     siteName: "SYS_403",
     images: [

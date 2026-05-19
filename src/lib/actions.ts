@@ -24,6 +24,12 @@ export async function getProducts() {
 
 export async function submitOrder(order: any) {
   try {
+    // Blindaje de Seguridad: Validación de Honeypot en el Servidor
+    if (order.honeypot && order.honeypot.length > 0) {
+      console.warn("INTENTO_BOT_BLOQUEADO:", order.email);
+      throw new Error("ACCESO_DENEGADO_SISTEMA_DETECTO_BOT");
+    }
+
     // Plan Candado: Mapeo EXPLICITO a minúsculas para PostgreSQL
     const dbOrder = {
       name: order.name,

@@ -319,7 +319,10 @@ export default function Customizer() {
 
       <div className="w-full lg:w-[480px] p-8 lg:p-12 overflow-y-auto custom-scrollbar bg-[#020202] z-30 flex flex-col border-t lg:border-t-0 lg:border-l border-white/5 shrink-0">
         <div className="space-y-10">
-          <h3 className="text-5xl font-black uppercase italic tracking-tighter leading-none text-white glitch-text" data-text="INYECTAR ADN">INYECTAR ADN</h3>
+          <div className="space-y-2">
+            <span className="text-[10px] font-black text-urban-red tracking-[0.5em] uppercase italic">Inyección de Código</span>
+            <h3 className="text-5xl font-black uppercase italic tracking-tighter leading-none text-white glitch-text" data-text="FORJAR EL ERROR">FORJAR EL ERROR</h3>
+          </div>
           
           <div className="grid grid-cols-3 gap-4">
             {designs.map((d) => (
@@ -328,18 +331,22 @@ export default function Customizer() {
                 <button onClick={(e) => { e.stopPropagation(); setDesigns(prev => prev.filter(x => x.id !== d.id)); if(selectedDesignId === d.id) setSelectedDesignId(null); }} className="absolute inset-0 bg-urban-red/90 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Trash2 size={24} /></button>
               </div>
             ))}
-            <label className="aspect-square border-2 border-dashed border-white/5 flex items-center justify-center cursor-pointer hover:border-urban-red transition-all group"><Plus size={32} className="text-white/20 group-hover:text-urban-red" /><input type="file" className="hidden" accept="image/png" onChange={(e) => { handleFileUpload(e); e.target.value = ''; }} /></label>
+            <label className="aspect-square border-2 border-dashed border-white/5 flex items-center justify-center cursor-pointer hover:border-urban-red transition-all group relative overflow-hidden">
+               <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+               <Plus size={32} className="text-white/20 group-hover:text-urban-red relative z-10" />
+               <input type="file" className="hidden" accept="image/png" onChange={(e) => { handleFileUpload(e); e.target.value = ''; }} />
+            </label>
           </div>
 
           <AnimatePresence>
             {selectedDesign && (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="p-8 bg-white/5 border border-white/10 space-y-8 overflow-hidden">
-                <div className="flex justify-between items-center"><span className="text-[10px] font-black text-[#00FF00]">CALIBRACIÓN_ADN</span><button onClick={() => setSelectedDesignId(null)} className="text-[10px] text-urban-red font-bold hover:text-white">Cerrar [X]</button></div>
+                <div className="flex justify-between items-center"><span className="text-[10px] font-black text-[#00FF00]">CALIBRACIÓN_ACCESO</span><button onClick={() => setSelectedDesignId(null)} className="text-[10px] text-urban-red font-bold hover:text-white">Abortar [X]</button></div>
                 <div className="space-y-8">
                   {[ 
-                    {l:'Eje X (Lateral)', v:selectedDesign.position[0], m:-1.5, mx:1.5, s:0.001, f:(v:any)=>updateSelectedDesign({position:[v,selectedDesign.position[1],selectedDesign.position[2]]}) },
-                    {l:'Eje Y (Vertical)', v:selectedDesign.position[1], m:-1.5, mx:1.5, s:0.001, f:(v:any)=>updateSelectedDesign({position:[selectedDesign.position[0],v,selectedDesign.position[2]]}) },
-                    {l:'Escala (Tamaño)', v:selectedDesign.scale[0], m:0.05, mx:1.2, s:0.01, f:(v:any)=>updateSelectedDesign({scale:[v,v,v]}) }
+                    {l:'Latitud X', v:selectedDesign.position[0], m:-1.5, mx:1.5, s:0.001, f:(v:any)=>updateSelectedDesign({position:[v,selectedDesign.position[1],selectedDesign.position[2]]}) },
+                    {l:'Altitud Y', v:selectedDesign.position[1], m:-1.5, mx:1.5, s:0.001, f:(v:any)=>updateSelectedDesign({position:[selectedDesign.position[0],v,selectedDesign.position[2]]}) },
+                    {l:'Densidad Glitch', v:selectedDesign.scale[0], m:0.05, mx:1.2, s:0.01, f:(v:any)=>updateSelectedDesign({scale:[v,v,v]}) }
                   ].map((x, i) => (
                     <div key={i} className="space-y-3">
                        <div className="flex justify-between items-center text-[10px] font-black text-white/40 uppercase tracking-widest">

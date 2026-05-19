@@ -17,8 +17,33 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SYS_403 | System Breach Streetwear",
-  description: "Accessing the restricted layer of urban fashion.",
+  title: "SYS_403 | Forjar Tu ADN",
+  description: "Lo que el sistema te niega, nosotros lo convertimos en estética. SYS_403 es el umbral que otros no pueden cruzar. Streetwear exclusivo // Acceso Denegado.",
+  openGraph: {
+    title: "SYS_403 | Forjar Tu ADN",
+    description: "No somos una marca de ropa. Somos un código de error con identidad propia. Viste el glitch.",
+    url: "https://sys403.online",
+    siteName: "SYS_403",
+    images: [
+      {
+        url: "/sys_403.png",
+        width: 800,
+        height: 800,
+        alt: "SYS_403 Logo",
+      },
+    ],
+    locale: "es_CO",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SYS_403 | Forjar Tu ADN",
+    description: "Lo que el sistema te niega, nosotros lo convertimos en estética.",
+    images: ["/sys_403.png"],
+  },
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({

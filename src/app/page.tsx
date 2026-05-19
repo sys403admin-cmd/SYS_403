@@ -45,7 +45,7 @@ export default function Home() {
               onClick={() => sounds.playClick()}
               className="inline-flex items-center gap-6 bg-urban-red text-white px-10 py-6 font-black uppercase tracking-[0.4em] italic hover:bg-white hover:text-black transition-all active:scale-95 md:hidden w-full justify-center shadow-[0_20px_40px_rgba(230,57,70,0.3)]"
             >
-               FORJAR EL ERROR <ArrowUpRight size={20} />
+               FORJAR TU ADN <ArrowUpRight size={20} />
             </Link>
           </div>
 
@@ -58,8 +58,8 @@ export default function Home() {
              >
                 <Terminal size={40} className="relative z-10" />
                 <div className="relative z-10">
-                   <p className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-40 group-hover:opacity-100">_forjar_el_error.exe</p>
-                   <h3 className="text-5xl font-black uppercase italic tracking-tighter leading-none mb-4 glitch-text" data-text="VESTIR EL GLITCH">VESTIR EL<br />GLITCH</h3>
+                   <p className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-40 group-hover:opacity-100">_forjar_tu_adn.exe</p>
+                   <h3 className="text-5xl font-black uppercase italic tracking-tighter leading-none mb-4 glitch-text" data-text="FORJAR TU ADN">FORJAR TU<br />ADN</h3>
                    <div className="flex justify-between items-center border-t border-current pt-6">
                       <span className="text-[10px] font-black uppercase tracking-widest">inyectar_adn_prohibido</span>
                       <ArrowUpRight size={24} />

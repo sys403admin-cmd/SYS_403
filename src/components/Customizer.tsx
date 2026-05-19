@@ -321,7 +321,7 @@ export default function Customizer() {
         <div className="space-y-10">
           <div className="space-y-2">
             <span className="text-[10px] font-black text-urban-red tracking-[0.5em] uppercase italic">Inyección de Código</span>
-            <h3 className="text-5xl font-black uppercase italic tracking-tighter leading-none text-white glitch-text" data-text="FORJAR EL ERROR">FORJAR EL ERROR</h3>
+            <h3 className="text-5xl font-black uppercase italic tracking-tighter leading-none text-white glitch-text" data-text="FORJAR TU ADN">FORJAR TU ADN</h3>
           </div>
           
           <div className="grid grid-cols-3 gap-4">

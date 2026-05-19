@@ -56,19 +56,6 @@ export default function Navbar() {
       </div>
 
       <div className="flex items-center gap-4 md:gap-6">
-        <Link 
-          href="/admin" 
-          onMouseEnter={() => sounds.playStatic()}
-          onClick={() => { sounds.playClick(); setIsOpen(false); }}
-          className="hidden md:flex items-center gap-4 px-6 py-3 bg-white text-black text-[10px] font-black uppercase tracking-[0.3em] italic hover:bg-urban-red hover:text-white transition-all shadow-xl group glitch-text" 
-          data-text="Bunker Admin"
-        >
-           <div className="w-6 h-6 bg-black flex items-center justify-center text-white group-hover:bg-white group-hover:text-black transition-colors">
-              <Terminal size={14} strokeWidth={3} />
-           </div>
-           <span>Bunker Admin</span>
-        </Link>
-
         {/* Mobile Menu Toggle */}
         <button 
           onClick={() => { sounds.playClick(); setIsOpen(!isOpen); }}
@@ -104,13 +91,6 @@ export default function Navbar() {
                 <span>{item.name}</span>
               </Link>
             ))}
-            <Link 
-              href="/admin" 
-              onClick={() => { sounds.playClick(); setIsOpen(false); }}
-              className="mt-12 flex items-center justify-center gap-4 p-8 bg-white text-black font-black uppercase italic tracking-widest text-sm"
-            >
-              <Terminal size={20} /> Entrar al Bunker
-            </Link>
           </div>
         </motion.div>
       )}

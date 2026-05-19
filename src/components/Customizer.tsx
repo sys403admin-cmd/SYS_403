@@ -81,7 +81,7 @@ SystemMessage.displayName = 'SystemMessage';
 
 const DecalItem = memo(({ design, offsetZ, targetMesh }: any) => {
   const texture = useTexture(design.url);
-  useMemo(() => { if (texture) { texture.anisotropy = 16; texture.colorSpace = THREE.SRGBColorSpace; } }, [texture]);
+  useMemo(() => { if (texture) { (texture as any).anisotropy = 16; (texture as any).colorSpace = THREE.SRGBColorSpace; } }, [texture]);
 
   let position: [number, number, number] = [
     design.position[0],
@@ -93,8 +93,8 @@ const DecalItem = memo(({ design, offsetZ, targetMesh }: any) => {
   if (design.zone === 'sleeve-r') position = [0.35, design.position[1] + 0.6, 0];
 
   return (
-    <Decal mesh={targetMesh} position={position} rotation={design.rotation} scale={[design.scale[0], design.scale[1], Math.max(0.1, design.scale[0] * 0.4)]}>
-      <meshBasicMaterial map={texture} transparent alphaTest={0.01} polygonOffset polygonOffsetFactor={-10} toneMapped={false} />
+    <Decal mesh={{ current: targetMesh } as any} position={position} rotation={design.rotation} scale={[design.scale[0], design.scale[1], Math.max(0.1, design.scale[0] * 0.4)]}>
+      <meshBasicMaterial map={texture as any} transparent alphaTest={0.01} polygonOffset polygonOffsetFactor={-10} toneMapped={false} />
     </Decal>
   );
 });
@@ -269,6 +269,15 @@ export default function Customizer() {
       await submitOrder({ ...formData, garmentType: garment, garmentColor, designs: finalDesigns });
       setLastSubmissionTime(Date.now());
       notify('success', 'ADN RECIBIDO EN EL BUNKER.');
+      
+      // WhatsApp Redirection to Admin
+      const waMsg = `> *NUEVO PEDIDO SYS_403*\n\n*Cliente:* ${formData.name}\n*Email:* ${formData.email}\n*WhatsApp:* ${formData.whatsapp}\n*Prenda:* ${garment}\n*Talla:* ${formData.size}\n*Color:* ${garmentColor}\n\n_El ADN ha sido cargado al bunker. Esperando confirmación._`;
+      const waUrl = `https://wa.me/573011138847?text=${encodeURIComponent(waMsg)}`;
+      
+      setTimeout(() => {
+        window.open(waUrl, '_blank');
+      }, 2000);
+
       setDesigns([]); resetForm();
     } catch (error: any) {
       notify('error', `FALLA: ${error.message.toUpperCase()}`);

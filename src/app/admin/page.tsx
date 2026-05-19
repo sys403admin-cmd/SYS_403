@@ -58,8 +58,8 @@ function AdminDecal({ design, targetMesh, type }: { design: any, targetMesh: THR
   if (design.zone === 'sleeve-r') position = [0.35, 0.6, 0];
 
   return (
-    <Decal mesh={targetMesh} position={position} rotation={design.rotation} scale={design.scale}>
-      <meshBasicMaterial map={texture} transparent alphaTest={0.01} polygonOffset polygonOffsetFactor={-10} />
+    <Decal mesh={{ current: targetMesh } as any} position={position} rotation={design.rotation} scale={design.scale}>
+      <meshBasicMaterial map={texture as any} transparent alphaTest={0.01} polygonOffset polygonOffsetFactor={-10} />
     </Decal>
   );
 }
@@ -297,32 +297,29 @@ export default function AdminDashboard() {
               </div>
             </header>
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-16">
+            <div className="flex flex-col gap-16 max-w-5xl mx-auto">
               {liveOrders.length === 0 ? (
-                <div className="col-span-full h-[50vh] border-8 border-dashed border-white/5 flex flex-col items-center justify-center text-white/5 uppercase tracking-[1em] italic bg-black/40">
+                <div className="h-[50vh] border-8 border-dashed border-white/5 flex flex-col items-center justify-center text-white/5 uppercase tracking-[1em] italic bg-black/40">
                    <Zap size={100} className="mb-8 animate-pulse" />
                    <p className="text-2xl font-black">SILENCIO_EN_EL_BARRIO</p>
                 </div>
               ) : (
                 liveOrders.map((order) => (
-                  <div key={order.id} className="bg-[#0D0D0D] border-t-[12px] border-urban-red p-12 flex flex-col gap-12 hover:bg-[#111111] transition-all shadow-[50px_50px_100px_rgba(0,0,0,0.8)] relative group">
+                  <div key={order.id} className="bg-[#0D0D0D] border-t-[12px] border-urban-red p-8 lg:p-12 flex flex-col gap-12 hover:bg-[#111111] transition-all shadow-[20px_20px_50px_rgba(0,0,0,0.5)] relative group overflow-hidden">
                     <div className="absolute top-6 right-8 text-[10px] font-black text-white/20 uppercase tracking-widest italic">#{order.id.toString().slice(-8)}</div>
                     
-                    <div className="flex flex-col md:flex-row gap-12">
-                      <div className="grid grid-cols-1 gap-4 w-full md:w-[280px] shrink-0">
+                    <div className="flex flex-col lg:flex-row gap-12">
+                      <div className="flex gap-4 overflow-x-auto pb-4 lg:pb-0 lg:flex-col lg:w-[200px] shrink-0 custom-scrollbar">
                         {(() => {
                           const raw = typeof order.designs === 'string' ? JSON.parse(order.designs) : order.designs;
                           const designsList = raw.payload || raw;
                           return Array.isArray(designsList) ? designsList.map((d: any, i: number) => (
-                            <div key={i} className="space-y-4">
+                            <div key={i} className="space-y-4 min-w-[150px] lg:min-w-0">
                                <div className="relative aspect-square bg-black border-4 border-white/5 overflow-hidden shadow-2xl flex items-center justify-center">
-                                 {d.url ? <Image src={d.url} alt="" fill className="object-contain p-4" /> : <Zap className="text-white/10" />}
+                                 {d.url ? <Image src={d.url} alt="" fill className="object-contain p-2" /> : <Zap className="text-white/10" />}
                                </div>
-                               <div className="bg-white/5 p-4 border-l-2 border-urban-red">
-                                  <p className="text-[8px] font-black text-[#00FF00] uppercase tracking-widest mb-2">COORDENADAS_ADN</p>
-                                  <p className="text-[7px] font-mono text-white/40 uppercase">ZONA: {d.zone}</p>
-                                  <p className="text-[7px] font-mono text-white/40">POS: [{d.position?.map((p:any) => p.toFixed(2)).join(', ')}]</p>
-                                  <p className="text-[7px] font-mono text-white/40">ESC: [{d.scale?.map((s:any) => s.toFixed(2)).join(', ')}]</p>
+                               <div className="bg-white/5 p-3 border-l-2 border-urban-red">
+                                  <p className="text-[7px] font-black text-[#00FF00] uppercase tracking-widest mb-1">ZONA: {d.zone}</p>
                                </div>
                             </div>
                           )) : null;

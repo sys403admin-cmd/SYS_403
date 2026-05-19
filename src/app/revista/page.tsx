@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { products, Product } from '@/lib/store';
-import { X, ChevronLeft, ChevronRight, Maximize2, Zap, Palette } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Maximize2, Zap, Palette, Terminal } from 'lucide-react';
 
 import { sounds } from '@/lib/sounds';
 

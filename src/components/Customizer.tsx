@@ -156,21 +156,21 @@ const OrderForm = memo(({ onSubmit, isSending, designsCount }: any) => {
   };
 
   return (
-    <form onSubmit={handleLocalSubmit} className="space-y-8 pt-10 border-t border-white/10">
+    <form onSubmit={handleLocalSubmit} className="space-y-6 sm:space-y-8 pt-6 sm:pt-10 border-t border-white/10">
       <input type="text" name="website" className="hidden" value={formData.honeypot} onChange={e => setFormData({...formData, honeypot: e.target.value})} />
       
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {[
           {id: 'name', label: 'ID_FORJADOR', ph: 'NOMBRE COMPLETO'},
           {id: 'email', label: 'ACCESO_MAIL', ph: 'CORREO ELECTRÓNICO', type: 'email'},
           {id: 'whatsapp', label: 'COMMS_WA', ph: '+57 300...'}
         ].map((f) => (
           <div key={f.id} className="relative group">
-            <span className="absolute -top-2.5 left-4 bg-[#020202] px-2 text-[8px] font-black text-urban-red tracking-widest uppercase italic">{f.label}</span>
+            <span className="absolute -top-2 left-4 bg-[#020202] px-2 text-[7px] sm:text-[8px] font-black text-urban-red tracking-widest uppercase italic z-10">{f.label}</span>
             <input 
               type={f.type || 'text'} 
               required 
-              className="w-full bg-white/5 border border-white/10 p-5 text-sm font-black uppercase outline-none focus:border-urban-red focus:bg-white/10 transition-all text-white" 
+              className="w-full bg-white/5 border border-white/10 p-4 sm:p-5 text-xs sm:text-sm font-black uppercase outline-none focus:border-urban-red focus:bg-white/10 transition-all text-white" 
               placeholder={f.ph}
               value={(formData as any)[f.id]} 
               onChange={e => setFormData({...formData, [f.id]: e.target.value})} 
@@ -179,18 +179,18 @@ const OrderForm = memo(({ onSubmit, isSending, designsCount }: any) => {
         ))}
       </div>
 
-      <div className="space-y-3">
-        <span className="text-[8px] font-black text-[#00FF00] tracking-widest uppercase italic ml-2">Dimensión ADN (Talla)</span>
+      <div className="space-y-2 sm:space-y-3">
+        <span className="text-[7px] sm:text-[8px] font-black text-[#00FF00] tracking-widest uppercase italic ml-2">Dimensión ADN (Talla)</span>
         <div className="flex gap-2">
           {['M', 'L', 'XL'].map((s) => (
-            <button key={s} type="button" onClick={() => setFormData({...formData, size: s as any})} className={`flex-grow py-3 text-xs font-black border transition-all ${formData.size === s ? 'bg-urban-red border-urban-red text-white' : 'bg-white/5 border-white/10 text-white/40 hover:border-white/30'}`}>{s}</button>
+            <button key={s} type="button" onClick={() => setFormData({...formData, size: s as any})} className={`flex-grow py-2.5 sm:py-3 text-[10px] sm:text-xs font-black border transition-all ${formData.size === s ? 'bg-urban-red border-urban-red text-white' : 'bg-white/5 border-white/10 text-white/40 hover:border-white/30'}`}>{s}</button>
           ))}
         </div>
       </div>
 
-      <button type="submit" disabled={designsCount === 0 || isSending} className="w-full py-6 bg-white text-black font-black uppercase tracking-[0.6em] hover:bg-urban-red hover:text-white transition-all flex items-center justify-center gap-4 relative overflow-hidden group shadow-2xl">
+      <button type="submit" disabled={designsCount === 0 || isSending} className="w-full py-5 sm:py-6 bg-white text-black font-black uppercase tracking-[0.4em] sm:tracking-[0.6em] text-xs sm:text-sm hover:bg-urban-red hover:text-white transition-all flex items-center justify-center gap-3 sm:gap-4 relative overflow-hidden group shadow-2xl">
         <span className="relative z-10">{isSending ? 'SELLANDO ADN...' : 'CERRAR FORJA'}</span>
-        <Shield size={18} className="relative z-10 group-hover:scale-110 transition-transform" />
+        <Shield size={16} sm:size={18} className="relative z-10 group-hover:scale-110 transition-transform" />
         <div className="absolute inset-0 bg-urban-red translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
       </button>
     </form>
@@ -290,68 +290,68 @@ export default function Customizer() {
         <AnimatePresence>{notifications.map(n => <SystemMessage key={n.id} notification={n} onClose={() => setNotifications(prev => prev.filter(x => x.id !== n.id))} />)}</AnimatePresence>
       </div>
 
-      <div className="flex-grow relative bg-[#050505] p-4 lg:p-8 flex items-center justify-center min-h-[60vh] lg:min-h-0">
+      <div className="flex-grow relative bg-[#050505] p-2 lg:p-8 flex items-center justify-center min-h-[50vh] sm:min-h-[60vh] lg:min-h-0 overflow-hidden">
         <Viewer3D garment={garment} garmentColor={garmentColor} designs={designs} orbitRef={orbitRef} />
         
-        <div className="absolute top-8 left-8 z-20 flex flex-col gap-4">
+        <div className="absolute top-4 sm:top-8 left-4 sm:left-8 z-20 flex flex-col gap-4">
            <div className="flex gap-2">
               {['BUSO', 'CAMISA'].map((type) => (
-                <button key={type} onClick={() => setGarment(type as any)} className={`px-4 py-2 text-[10px] font-black border transition-all ${garment === type ? 'bg-urban-red border-urban-red text-white' : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'}`}>{type}</button>
+                <button key={type} onClick={() => setGarment(type as any)} className={`px-3 sm:px-4 py-1.5 sm:py-2 text-[9px] sm:text-[10px] font-black border transition-all ${garment === type ? 'bg-urban-red border-urban-red text-white' : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'}`}>{type}</button>
               ))}
            </div>
         </div>
 
-        <div className="absolute top-8 right-8 z-20 flex flex-col gap-3 bg-black/80 backdrop-blur-xl p-5 border border-white/10 shadow-2xl min-w-[180px]">
-           <span className="text-[10px] font-black text-white/20 mb-2 text-center border-b border-white/5 pb-2">PROYECCIÓN_ADN</span>
-           <div className="grid grid-cols-2 gap-2">
+        <div className="absolute top-4 sm:top-8 right-4 sm:right-8 z-20 flex flex-col gap-2 sm:gap-3 bg-black/80 backdrop-blur-xl p-3 sm:p-5 border border-white/10 shadow-2xl min-w-[120px] sm:min-w-[180px]">
+           <span className="text-[8px] sm:text-[10px] font-black text-white/20 mb-1 sm:mb-2 text-center border-b border-white/5 pb-1 sm:pb-2 tracking-widest uppercase">Mapeo_ADN</span>
+           <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
               {['front', 'back', 'sleeve-l', 'sleeve-r'].map((z) => (
-                <button key={z} onClick={() => focusZone(z)} className={`px-4 py-3 text-[9px] font-black uppercase transition-all border-2 ${activeZone === z ? 'bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.2)]' : 'border-white/10 text-white/30 hover:border-white/30 hover:bg-white/5'}`}>{z === 'front' ? 'Pecho' : z === 'back' ? 'Espalda' : z === 'sleeve-l' ? 'Manga L' : 'Manga R'}</button>
+                <button key={z} onClick={() => focusZone(z)} className={`px-2 sm:px-4 py-2 sm:py-3 text-[7px] sm:text-[9px] font-black uppercase transition-all border-2 ${activeZone === z ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.2)]' : 'border-white/10 text-white/30 hover:border-white/30 hover:bg-white/5'}`}>{z === 'front' ? 'Pecho' : z === 'back' ? 'Espalda' : z === 'sleeve-l' ? 'Manga L' : 'Manga R'}</button>
               ))}
            </div>
         </div>
         
-        <div className="absolute bottom-8 left-8 z-20 flex gap-2 bg-black/40 p-2 border border-white/5">
+        <div className="absolute bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 sm:translate-x-0 sm:left-8 z-20 flex gap-1.5 sm:gap-2 bg-black/40 p-1.5 sm:p-2 border border-white/5 backdrop-blur-md">
            {['#FFFFFF', '#DACDBB', '#B59F85', '#FFB6C1', '#0D0D0D', '#333333', '#23112E', '#9B111E'].map((c) => (
-             <button key={c} onClick={() => setGarmentColor(c)} className={`w-8 h-8 border-2 ${garmentColor === c ? 'border-white scale-110 rotate-45 shadow-[0_0_15px_rgba(255,255,255,0.3)]' : 'border-transparent opacity-40 hover:opacity-100'}`} style={{ backgroundColor: c }} />
+             <button key={c} onClick={() => setGarmentColor(c)} className={`w-6 h-6 sm:w-8 sm:h-8 border-2 ${garmentColor === c ? 'border-white scale-110 rotate-45 shadow-[0_0_15px_rgba(255,255,255,0.3)]' : 'border-transparent opacity-40 hover:opacity-100'}`} style={{ backgroundColor: c }} />
            ))}
         </div>
       </div>
 
-      <div className="w-full lg:w-[480px] p-8 lg:p-12 overflow-y-auto custom-scrollbar bg-[#020202] z-30 flex flex-col border-t lg:border-t-0 lg:border-l border-white/5 shrink-0">
-        <div className="space-y-10">
+      <div className="w-full lg:w-[480px] p-6 sm:p-8 lg:p-12 overflow-y-auto custom-scrollbar bg-[#020202] z-30 flex flex-col border-t lg:border-t-0 lg:border-l border-white/5 shrink-0">
+        <div className="space-y-8 sm:space-y-10">
           <div className="space-y-2">
-            <span className="text-[10px] font-black text-urban-red tracking-[0.5em] uppercase italic">Inyección de Código</span>
-            <h3 className="text-5xl font-black uppercase italic tracking-tighter leading-none text-white glitch-text" data-text="FORJAR TU ADN">FORJAR TU ADN</h3>
+            <span className="text-[8px] sm:text-[10px] font-black text-urban-red tracking-[0.4em] sm:tracking-[0.5em] uppercase italic">Inyección de Código</span>
+            <h3 className="text-4xl sm:text-5xl font-black uppercase italic tracking-tighter leading-none text-white glitch-text" data-text="FORJAR TU ADN">FORJAR TU ADN</h3>
           </div>
           
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-3 sm:gap-4">
             {designs.map((d) => (
               <div key={d.id} onClick={() => { setSelectedDesignId(d.id); focusZone(d.zone); }} className={`relative aspect-square bg-black border-2 ${selectedDesignId === d.id ? 'border-urban-red shadow-[0_0_20px_rgba(255,0,0,0.2)]' : 'border-white/5'} cursor-pointer group`}>
                 <img src={d.url} alt="ADN" className="w-full h-full object-contain p-2" />
-                <button onClick={(e) => { e.stopPropagation(); setDesigns(prev => prev.filter(x => x.id !== d.id)); if(selectedDesignId === d.id) setSelectedDesignId(null); }} className="absolute inset-0 bg-urban-red/90 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Trash2 size={24} /></button>
+                <button onClick={(e) => { e.stopPropagation(); setDesigns(prev => prev.filter(x => x.id !== d.id)); if(selectedDesignId === d.id) setSelectedDesignId(null); }} className="absolute inset-0 bg-urban-red/90 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Trash2 size={20} sm:size={24} /></button>
               </div>
             ))}
             <label className="aspect-square border-2 border-dashed border-white/5 flex items-center justify-center cursor-pointer hover:border-urban-red transition-all group relative overflow-hidden">
                <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-               <Plus size={32} className="text-white/20 group-hover:text-urban-red relative z-10" />
+               <Plus size={24} sm:size={32} className="text-white/20 group-hover:text-urban-red relative z-10" />
                <input type="file" className="hidden" accept="image/png" onChange={(e) => { handleFileUpload(e); e.target.value = ''; }} />
             </label>
           </div>
 
           <AnimatePresence>
             {selectedDesign && (
-              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="p-8 bg-white/5 border border-white/10 space-y-8 overflow-hidden">
-                <div className="flex justify-between items-center"><span className="text-[10px] font-black text-[#00FF00]">CALIBRACIÓN_ACCESO</span><button onClick={() => setSelectedDesignId(null)} className="text-[10px] text-urban-red font-bold hover:text-white">Abortar [X]</button></div>
-                <div className="space-y-8">
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="p-6 sm:p-8 bg-white/5 border border-white/10 space-y-6 sm:space-y-8 overflow-hidden">
+                <div className="flex justify-between items-center"><span className="text-[8px] sm:text-[10px] font-black text-[#00FF00] tracking-widest uppercase">Calibración_Glitch</span><button onClick={() => setSelectedDesignId(null)} className="text-[8px] sm:text-[10px] text-urban-red font-bold hover:text-white uppercase tracking-widest">Abortar [X]</button></div>
+                <div className="space-y-6 sm:space-y-8">
                   {[ 
                     {l:'Latitud X', v:selectedDesign.position[0], m:-1.5, mx:1.5, s:0.001, f:(v:any)=>updateSelectedDesign({position:[v,selectedDesign.position[1],selectedDesign.position[2]]}) },
                     {l:'Altitud Y', v:selectedDesign.position[1], m:-1.5, mx:1.5, s:0.001, f:(v:any)=>updateSelectedDesign({position:[selectedDesign.position[0],v,selectedDesign.position[2]]}) },
-                    {l:'Densidad Glitch', v:selectedDesign.scale[0], m:0.05, mx:1.2, s:0.01, f:(v:any)=>updateSelectedDesign({scale:[v,v,v]}) }
+                    {l:'Densidad ADN', v:selectedDesign.scale[0], m:0.05, mx:1.2, s:0.01, f:(v:any)=>updateSelectedDesign({scale:[v,v,v]}) }
                   ].map((x, i) => (
-                    <div key={i} className="space-y-3">
-                       <div className="flex justify-between items-center text-[10px] font-black text-white/40 uppercase tracking-widest">
+                    <div key={i} className="space-y-2 sm:space-y-3">
+                       <div className="flex justify-between items-center text-[8px] sm:text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">
                          <span>{x.l}</span>
-                         <input type="number" step={x.s} value={x.v.toFixed(3)} onChange={(e)=>x.f(parseFloat(e.target.value)||0)} className="w-24 bg-black border border-white/20 text-[#00FF00] font-mono text-center py-1 text-xs outline-none focus:border-urban-red" />
+                         <input type="number" step={x.s} value={x.v.toFixed(3)} onChange={(e)=>x.f(parseFloat(e.target.value)||0)} className="w-16 sm:w-24 bg-black border border-white/20 text-[#00FF00] font-mono text-center py-1 text-[10px] sm:text-xs outline-none focus:border-urban-red" />
                        </div>
                        <input type="range" min={x.m} max={x.mx} step={x.s} value={x.v} onChange={(e)=>x.f(parseFloat(e.target.value))} className="w-full accent-urban-red" />
                     </div>

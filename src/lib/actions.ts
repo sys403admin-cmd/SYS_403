@@ -23,7 +23,53 @@ export async function getProducts() {
 }
 
 export async function submitOrder(order: any) {
-  // ... (existing submitOrder for custom products)
+  try {
+    // Blindaje de Seguridad: Validación de Honeypot en el Servidor
+    if (order.honeypot && order.honeypot.length > 0) {
+      console.warn("INTENTO_BOT_BLOQUEADO:", order.email);
+      throw new Error("ACCESO_DENEGADO_SISTEMA_DETECTO_BOT");
+    }
+
+    // Plan Candado: Mapeo EXPLICITO a minúsculas para PostgreSQL
+    const dbOrder = {
+      name: order.name,
+      email: order.email,
+      whatsapp: order.whatsapp,
+      garmenttype: order.garmentType,
+      garmentcolor: order.garmentColor,
+      size: order.size,
+      designs: JSON.stringify(order.designs),
+      status: 'Pendiente',
+      date: new Date().toISOString()
+    };
+
+    const { data, error } = await supabaseAdmin
+      .from('orders')
+      .insert([dbOrder])
+      .select();
+
+    if (error) throw error;
+
+    // Notificaciones automáticas (Diseño Matrix v2.0)
+    await resend.emails.send({
+      from: 'SYS_403 <onboarding@resend.dev>',
+      to: order.email,
+      subject: `> BREACH_CONFIRMED // ${order.name}`,
+      html: getMatrixEmailTemplate(order, false),
+    }).catch(e => console.error("Error email cliente:", e));
+
+    await resend.emails.send({
+      from: 'BUNKER_ALERT <onboarding@resend.dev>',
+      to: 'sys.403admin@gmail.com',
+      subject: `> INCOMING_ADN // ${order.name}`,
+      html: getMatrixEmailTemplate(order, true),
+    }).catch(e => console.error("Error email admin:", e));
+
+    return { success: true, data: data[0] };
+  } catch (error: any) {
+    console.error('--- FALLA CRÍTICA BUNKER ---', error.message);
+    throw new Error(error.message);
+  }
 }
 
 export async function submitCatalogOrder(orderData: { 

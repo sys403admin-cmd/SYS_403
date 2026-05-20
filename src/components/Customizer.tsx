@@ -83,10 +83,11 @@ const DecalItem = memo(({ design, offsetZ, targetMesh }: any) => {
   const texture = useTexture(design.url);
   useMemo(() => { 
     if (texture) { 
-      texture.anisotropy = 16; 
-      texture.colorSpace = THREE.SRGBColorSpace; 
-      texture.minFilter = THREE.LinearMipmapLinearFilter;
-      texture.magFilter = THREE.LinearFilter;
+      const tex = Array.isArray(texture) ? texture[0] : texture;
+      (tex as any).anisotropy = 16; 
+      (tex as any).colorSpace = THREE.SRGBColorSpace; 
+      (tex as any).minFilter = THREE.LinearMipmapLinearFilter;
+      (tex as any).magFilter = THREE.LinearFilter;
     } 
   }, [texture]);
 

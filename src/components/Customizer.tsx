@@ -81,20 +81,68 @@ SystemMessage.displayName = 'SystemMessage';
 
 const DecalItem = memo(({ design, offsetZ, targetMesh }: any) => {
   const texture = useTexture(design.url);
-  useMemo(() => { if (texture) { (texture as any).anisotropy = 16; (texture as any).colorSpace = THREE.SRGBColorSpace; } }, [texture]);
+  useMemo(() => { 
+    if (texture) { 
+      texture.anisotropy = 16; 
+      texture.colorSpace = THREE.SRGBColorSpace; 
+      texture.minFilter = THREE.LinearMipmapLinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+    } 
+  }, [texture]);
 
-  let position: [number, number, number] = [
-    design.position[0],
-    design.position[1] + 0.6, 
-    design.zone === 'front' ? offsetZ : (design.zone === 'back' ? -offsetZ : 0)
-  ];
+  // Cálculo de posición y orientación ultra-preciso por zona
+  const getDecalProps = () => {
+    const basePos = [...design.position];
+    const baseRot = [...design.rotation];
+    
+    // Ajuste de profundidad (Z) según zona para evitar colisiones internas
+    // y asegurar que el diseño no "atraviese" el modelo
+    if (design.zone === 'front') {
+      return {
+        pos: [basePos[0], basePos[1] + 0.6, offsetZ] as [number, number, number],
+        rot: [0, 0, baseRot[2]] as [number, number, number]
+      };
+    }
+    if (design.zone === 'back') {
+      return {
+        pos: [basePos[0], basePos[1] + 0.6, -offsetZ] as [number, number, number],
+        rot: [0, Math.PI, baseRot[2]] as [number, number, number]
+      };
+    }
+    if (design.zone === 'sleeve-l') {
+      return {
+        pos: [-0.38 + basePos[0], basePos[1] + 0.6, basePos[2]] as [number, number, number],
+        rot: [0, -Math.PI / 2, baseRot[2]] as [number, number, number]
+      };
+    }
+    if (design.zone === 'sleeve-r') {
+      return {
+        pos: [0.38 + basePos[0], basePos[1] + 0.6, basePos[2]] as [number, number, number],
+        rot: [0, Math.PI / 2, baseRot[2]] as [number, number, number]
+      };
+    }
+    return { pos: [0, 0, 0] as [number, number, number], rot: [0, 0, 0] as [number, number, number] };
+  };
 
-  if (design.zone === 'sleeve-l') position = [-0.35, design.position[1] + 0.6, 0];
-  if (design.zone === 'sleeve-r') position = [0.35, design.position[1] + 0.6, 0];
+  const { pos, rot } = getDecalProps();
 
   return (
-    <Decal mesh={{ current: targetMesh } as any} position={position} rotation={design.rotation} scale={[design.scale[0], design.scale[1], Math.max(0.1, design.scale[0] * 0.4)]}>
-      <meshBasicMaterial map={texture as any} transparent alphaTest={0.01} polygonOffset polygonOffsetFactor={-10} toneMapped={false} />
+    <Decal 
+      mesh={{ current: targetMesh } as any} 
+      position={pos} 
+      rotation={rot} 
+      scale={[design.scale[0], design.scale[1], 0.2]} // Profundidad fija pequeña para evitar bleed
+    >
+      <meshStandardMaterial 
+        map={texture as any} 
+        transparent 
+        alphaTest={0.05} 
+        polygonOffset 
+        polygonOffsetFactor={-10} // Forzar que esté siempre por encima de la tela
+        roughness={1}
+        metalness={0}
+        toneMapped={false} 
+      />
     </Decal>
   );
 });
@@ -301,7 +349,7 @@ export default function Customizer() {
            </div>
         </div>
 
-        <div className="absolute top-4 sm:top-8 right-4 sm:right-8 z-20 flex flex-col gap-2 sm:gap-3 bg-black/80 backdrop-blur-xl p-3 sm:p-5 border border-white/10 shadow-2xl min-w-[120px] sm:min-w-[180px]">
+        <div className="absolute bottom-24 sm:bottom-auto sm:top-8 right-4 sm:right-8 z-20 flex flex-col gap-2 sm:gap-3 bg-black/80 backdrop-blur-xl p-3 sm:p-5 border border-white/10 shadow-2xl min-w-[120px] sm:min-w-[180px]">
            <span className="text-[8px] sm:text-[10px] font-black text-white/20 mb-1 sm:mb-2 text-center border-b border-white/5 pb-1 sm:pb-2 tracking-widest uppercase">Mapeo_ADN</span>
            <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
               {['front', 'back', 'sleeve-l', 'sleeve-r'].map((z) => (
@@ -311,7 +359,7 @@ export default function Customizer() {
         </div>
         
         <div className="absolute bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 sm:translate-x-0 sm:left-8 z-20 flex gap-1.5 sm:gap-2 bg-black/40 p-1.5 sm:p-2 border border-white/5 backdrop-blur-md">
-           {['#FFFFFF', '#DACDBB', '#B59F85', '#FFB6C1', '#0D0D0D', '#333333', '#23112E', '#9B111E'].map((c) => (
+           {['#FFFFFF', '#DACDBB', '#B59F85', '#FFB6C1', '#0D0D0D', '#333333'].map((c) => (
              <button key={c} onClick={() => setGarmentColor(c)} className={`w-6 h-6 sm:w-8 sm:h-8 border-2 ${garmentColor === c ? 'border-white scale-110 rotate-45 shadow-[0_0_15px_rgba(255,255,255,0.3)]' : 'border-transparent opacity-40 hover:opacity-100'}`} style={{ backgroundColor: c }} />
            ))}
         </div>

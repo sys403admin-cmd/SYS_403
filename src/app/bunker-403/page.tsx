@@ -48,18 +48,55 @@ function AdminDecal({ design, targetMesh, type }: { design: any, targetMesh: THR
   const texture = useTexture(design.url);
   const offsetZ = type === 'BUSO' ? 0.18 : 0.15;
 
-  let position: [number, number, number] = [
-    design.position[0],
-    design.position[1] + 0.6,
-    design.zone === 'front' ? offsetZ : (design.zone === 'back' ? -offsetZ : 0)
-  ];
+  // Lógica de coordenadas espejo del Laboratorio para precisión total
+  const getDecalProps = () => {
+    const basePos = [...design.position];
+    const baseRot = [...design.rotation];
+    
+    if (design.zone === 'front') {
+      return {
+        pos: [basePos[0], basePos[1] + 0.6, offsetZ] as [number, number, number],
+        rot: [0, 0, baseRot[2]] as [number, number, number]
+      };
+    }
+    if (design.zone === 'back') {
+      return {
+        pos: [basePos[0], basePos[1] + 0.6, -offsetZ] as [number, number, number],
+        rot: [0, Math.PI, baseRot[2]] as [number, number, number]
+      };
+    }
+    if (design.zone === 'sleeve-l') {
+      return {
+        pos: [-0.38 + basePos[0], basePos[1] + 0.6, basePos[2]] as [number, number, number],
+        rot: [0, -Math.PI / 2, baseRot[2]] as [number, number, number]
+      };
+    }
+    if (design.zone === 'sleeve-r') {
+      return {
+        pos: [0.38 + basePos[0], basePos[1] + 0.6, basePos[2]] as [number, number, number],
+        rot: [0, Math.PI / 2, baseRot[2]] as [number, number, number]
+      };
+    }
+    return { pos: [0, 0, 0] as [number, number, number], rot: [0, 0, 0] as [number, number, number] };
+  };
 
-  if (design.zone === 'sleeve-l') position = [-0.35, 0.6, 0];
-  if (design.zone === 'sleeve-r') position = [0.35, 0.6, 0];
+  const { pos, rot } = getDecalProps();
 
   return (
-    <Decal mesh={{ current: targetMesh } as any} position={position} rotation={design.rotation} scale={design.scale}>
-      <meshBasicMaterial map={texture as any} transparent alphaTest={0.01} polygonOffset polygonOffsetFactor={-10} />
+    <Decal 
+      mesh={{ current: targetMesh } as any} 
+      position={pos} 
+      rotation={rot} 
+      scale={[design.scale[0], design.scale[1], 0.2]}
+    >
+      <meshStandardMaterial 
+        map={texture as any} 
+        transparent 
+        alphaTest={0.05} 
+        polygonOffset 
+        polygonOffsetFactor={-10}
+        toneMapped={false}
+      />
     </Decal>
   );
 }
@@ -309,17 +346,17 @@ export default function AdminDashboard() {
                     <div className="absolute top-6 right-8 text-[10px] font-black text-white/20 uppercase tracking-widest italic">#{order.id.toString().slice(-8)}</div>
                     
                     <div className="flex flex-col lg:flex-row gap-12">
-                      <div className="flex gap-4 overflow-x-auto pb-4 lg:pb-0 lg:flex-col lg:w-[200px] shrink-0 custom-scrollbar">
+                      <div className="flex flex-wrap gap-4 lg:w-[250px] shrink-0">
                         {(() => {
                           const raw = typeof order.designs === 'string' ? JSON.parse(order.designs) : order.designs;
                           const designsList = raw.payload || raw;
                           return Array.isArray(designsList) ? designsList.map((d: any, i: number) => (
-                            <div key={i} className="space-y-4 min-w-[150px] lg:min-w-0">
-                               <div className="relative aspect-square bg-black border-4 border-white/5 overflow-hidden shadow-2xl flex items-center justify-center">
-                                 {d.url ? <Image src={d.url} alt="" fill className="object-contain p-2" /> : <Zap className="text-white/10" />}
+                            <div key={i} className="flex flex-col gap-2 w-[100px]">
+                               <div className="relative aspect-square bg-black border-2 border-white/10 overflow-hidden shadow-lg flex items-center justify-center group-hover:border-urban-red transition-colors">
+                                 {d.url ? <Image src={d.url} alt="" fill className="object-contain p-1" /> : <Zap size={16} className="text-white/10" />}
                                </div>
-                               <div className="bg-white/5 p-3 border-l-2 border-urban-red">
-                                  <p className="text-[7px] font-black text-[#00FF00] uppercase tracking-widest mb-1">ZONA: {d.zone}</p>
+                               <div className="bg-white/5 px-2 py-1 border-l border-urban-red">
+                                  <p className="text-[6px] font-black text-[#00FF00] uppercase tracking-tighter truncate">{d.zone}</p>
                                </div>
                             </div>
                           )) : null;

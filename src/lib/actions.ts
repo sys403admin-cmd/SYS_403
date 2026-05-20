@@ -23,51 +23,74 @@ export async function getProducts() {
 }
 
 export async function submitOrder(order: any) {
+  // ... (existing submitOrder for custom products)
+}
+
+export async function submitCatalogOrder(orderData: { 
+  customer: any, 
+  items: any[], 
+  total: number 
+}) {
   try {
-    // Blindaje de Seguridad: Validación de Honeypot en el Servidor
-    if (order.honeypot && order.honeypot.length > 0) {
-      console.warn("INTENTO_BOT_BLOQUEADO:", order.email);
-      throw new Error("ACCESO_DENEGADO_SISTEMA_DETECTO_BOT");
+    const { customer, items, total } = orderData;
+
+    // 1. Descontar Stock y Registrar Pedido
+    for (const item of items) {
+      const { data: product, error: fetchError } = await supabaseAdmin
+        .from('products')
+        .select('stock')
+        .eq('id', item.product.id)
+        .single();
+
+      if (fetchError || !product) throw new Error(`PRODUCTO_NO_ENCONTRADO: ${item.product.name}`);
+      if (product.stock < item.quantity) throw new Error(`STOCK_INSUFICIENTE: ${item.product.name}`);
+
+      const { error: updateError } = await supabaseAdmin
+        .from('products')
+        .update({ stock: product.stock - item.quantity })
+        .eq('id', item.product.id);
+
+      if (updateError) throw updateError;
     }
 
-    // Plan Candado: Mapeo EXPLICITO a minúsculas para PostgreSQL
+    // 2. Registrar en tabla orders
     const dbOrder = {
-      name: order.name,
-      email: order.email,
-      whatsapp: order.whatsapp,
-      garmenttype: order.garmentType,
-      garmentcolor: order.garmentColor,
-      size: order.size,
-      designs: JSON.stringify(order.designs),
+      name: customer.name,
+      email: customer.email,
+      whatsapp: customer.whatsapp,
+      garmenttype: 'CATALOGO',
+      garmentcolor: 'VARIOUS',
+      size: 'VARIOUS',
+      designs: JSON.stringify(items),
       status: 'Pendiente',
       date: new Date().toISOString()
     };
 
-    const { data, error } = await supabaseAdmin
+    const { data, error: orderError } = await supabaseAdmin
       .from('orders')
       .insert([dbOrder])
       .select();
 
-    if (error) throw error;
+    if (orderError) throw orderError;
 
-    // Notificaciones automáticas
+    // 3. Notificaciones Unificadas (Diseño Matrix)
     await resend.emails.send({
       from: 'SYS_403 <onboarding@resend.dev>',
-      to: order.email,
-      subject: `> BREACH_CONFIRMED // ${order.name}`,
-      html: getMatrixEmailTemplate(order, false),
+      to: customer.email,
+      subject: `> PEDIDO_RECIBIDO // ${customer.name}`,
+      html: getMatrixEmailTemplate(orderData, false, true),
     }).catch(e => console.error("Error email cliente:", e));
 
     await resend.emails.send({
       from: 'BUNKER_ALERT <onboarding@resend.dev>',
       to: 'sys.403admin@gmail.com',
-      subject: `> INCOMING_ADN // ${order.name}`,
-      html: getMatrixEmailTemplate(order, true),
+      subject: `> INCOMING_CATALOG_ADN // ${customer.name}`,
+      html: getMatrixEmailTemplate(orderData, true, true),
     }).catch(e => console.error("Error email admin:", e));
 
-    return { success: true, data: data[0] };
+    return { success: true, orderId: data[0].id };
   } catch (error: any) {
-    console.error('--- FALLA CRÍTICA BUNKER ---', error.message);
+    console.error('--- FALLA CRÍTICA PEDIDO CATALOGO ---', error.message);
     throw new Error(error.message);
   }
 }

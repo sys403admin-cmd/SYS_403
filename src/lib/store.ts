@@ -8,6 +8,14 @@ export interface Product {
   description: string;
   colors: string[]; 
   soldOut?: boolean;
+  stock: number;
+}
+
+export interface CartItem {
+  product: Product;
+  quantity: number;
+  selectedColor?: string;
+  selectedSize?: string;
 }
 
 export interface CustomOrder {
@@ -41,7 +49,8 @@ const defaultProducts: Product[] = [
     images: ['https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=80&w=800'],
     description: 'Buso de alto gramaje con estética nocturna. Inspirado en las luces de la ciudad y el movimiento underground.',
     colors: ['#000000', '#1A1A1A', '#333333'],
-    soldOut: false
+    soldOut: false,
+    stock: 3
   },
   { 
     id: 2, 
@@ -51,7 +60,8 @@ const defaultProducts: Product[] = [
     images: ['https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=800'],
     description: 'Camiseta básica pero con corte premium. Representa el corazón de cemento que late en cada barrio.',
     colors: ['#FFFFFF', '#333333', '#C0C0C0'],
-    soldOut: true
+    soldOut: false,
+    stock: 3
   }
 ];
 

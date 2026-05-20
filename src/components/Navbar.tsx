@@ -4,8 +4,9 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, ShieldCheck, LayoutGrid, Archive, Biohazard, Terminal, Menu, X } from 'lucide-react';
+import { Zap, ShieldCheck, LayoutGrid, Archive, Biohazard, Terminal, Menu, X, ShoppingCart } from 'lucide-react';
 import { sounds } from '@/lib/sounds';
+import { useCart } from '@/lib/cartContext';
 
 const navItems = [
   { name: 'Inicio', path: '/', icon: LayoutGrid },
@@ -16,6 +17,7 @@ const navItems = [
 export default function Navbar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const { totalItems, setIsCartOpen } = useCart();
 
   return (
     <>
@@ -56,6 +58,19 @@ export default function Navbar() {
       </div>
 
       <div className="flex items-center gap-4 md:gap-6">
+        {/* Cart Toggle */}
+        <button 
+          onClick={() => { sounds.playClick(); setIsCartOpen(true); }}
+          className="relative group p-3 bg-white/5 border border-white/10 text-white hover:bg-urban-red hover:border-urban-red transition-all duration-300"
+        >
+          <ShoppingCart size={20} className="relative z-10" />
+          {totalItems > 0 && (
+            <span className="absolute -top-2 -right-2 bg-urban-red text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-black animate-pulse">
+              {totalItems}
+            </span>
+          )}
+        </button>
+
         {/* Mobile Menu Toggle */}
         <button 
           onClick={() => { sounds.playClick(); setIsOpen(!isOpen); }}

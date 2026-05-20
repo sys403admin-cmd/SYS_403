@@ -5,6 +5,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Preloader from "@/components/Preloader";
 import CustomCursor from "@/components/CustomCursor";
+import CartDrawer from "@/components/CartDrawer";
+import { CartProvider } from "@/lib/cartContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -55,11 +57,14 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
       <body className="bg-urban-bone text-urban-charcoal dark:bg-urban-charcoal dark:text-urban-bone min-h-screen flex flex-col crt">
-        <Preloader />
-        <CustomCursor />
-        <Navbar />
-        <main className="flex-grow">{children}</main>
-        <Footer />
+        <CartProvider>
+          <Preloader />
+          <CustomCursor />
+          <CartDrawer />
+          <Navbar />
+          <main className="flex-grow">{children}</main>
+          <Footer />
+        </CartProvider>
       </body>
     </html>
   );

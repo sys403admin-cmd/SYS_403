@@ -238,7 +238,7 @@ const OrderForm = memo(({ onSubmit, isSending, designsCount }: any) => {
 
       <button type="submit" disabled={designsCount === 0 || isSending} className="w-full py-5 sm:py-6 bg-white text-black font-black uppercase tracking-[0.4em] sm:tracking-[0.6em] text-xs sm:text-sm hover:bg-urban-red hover:text-white transition-all flex items-center justify-center gap-3 sm:gap-4 relative overflow-hidden group shadow-2xl">
         <span className="relative z-10">{isSending ? 'SELLANDO ADN...' : 'CERRAR FORJA'}</span>
-        <Shield size={16} sm:size={18} className="relative z-10 group-hover:scale-110 transition-transform" />
+        <Shield className="w-4 h-4 sm:w-5 sm:h-5 relative z-10 group-hover:scale-110 transition-transform" />
         <div className="absolute inset-0 bg-urban-red translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
       </button>
     </form>
@@ -376,12 +376,12 @@ export default function Customizer() {
             {designs.map((d) => (
               <div key={d.id} onClick={() => { setSelectedDesignId(d.id); focusZone(d.zone); }} className={`relative aspect-square bg-black border-2 ${selectedDesignId === d.id ? 'border-urban-red shadow-[0_0_20px_rgba(255,0,0,0.2)]' : 'border-white/5'} cursor-pointer group`}>
                 <img src={d.url} alt="ADN" className="w-full h-full object-contain p-2" />
-                <button onClick={(e) => { e.stopPropagation(); setDesigns(prev => prev.filter(x => x.id !== d.id)); if(selectedDesignId === d.id) setSelectedDesignId(null); }} className="absolute inset-0 bg-urban-red/90 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Trash2 size={20} sm:size={24} /></button>
+                <button onClick={(e) => { e.stopPropagation(); setDesigns(prev => prev.filter(x => x.id !== d.id)); if(selectedDesignId === d.id) setSelectedDesignId(null); }} className="absolute inset-0 bg-urban-red/90 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><Trash2 className="w-5 h-5 sm:w-6 sm:h-6" /></button>
               </div>
             ))}
             <label className="aspect-square border-2 border-dashed border-white/5 flex items-center justify-center cursor-pointer hover:border-urban-red transition-all group relative overflow-hidden">
                <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-               <Plus size={24} sm:size={32} className="text-white/20 group-hover:text-urban-red relative z-10" />
+               <Plus className="w-6 h-6 sm:w-8 sm:h-8 text-white/20 group-hover:text-urban-red relative z-10" />
                <input type="file" className="hidden" accept="image/png" onChange={(e) => { handleFileUpload(e); e.target.value = ''; }} />
             </label>
           </div>

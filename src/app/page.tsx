@@ -52,7 +52,23 @@ export default function Home() {
           <div className="lg:col-span-4 hidden md:block w-full">
              <Link 
                href="/laboratorio" 
-...
+               onMouseEnter={() => sounds.playHover()}
+               onClick={() => sounds.playClick()}
+               className="group relative block aspect-square bg-[#0D0D0D] border-8 border-urban-red overflow-hidden shadow-[30px_30px_100px_rgba(0,0,0,0.8)]"
+             >
+                <div className="absolute inset-0 bg-gradient-to-tr from-urban-red/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center">
+                   <Biohazard size={80} className="text-urban-red mb-6 group-hover:scale-110 transition-transform duration-700 animate-spin-slow" />
+                   <h3 className="text-4xl font-black uppercase italic tracking-tighter leading-none mb-4 glitch-text" data-text="FORJAR ADN">FORJAR ADN</h3>
+                   <span className="text-[10px] font-black tracking-[0.5em] text-white/40 uppercase group-hover:text-urban-red transition-colors italic">Inyectar Código</span>
+                </div>
+                <div className="absolute bottom-6 right-6 p-4 bg-white text-black translate-y-[200%] group-hover:translate-y-0 transition-transform duration-500">
+                   <ArrowUpRight size={24} />
+                </div>
+             </Link>
+          </div>
+        </div>
+
         {/* Brand Philosophy Section - Mobile Optimized */}
         <section className="mb-24 md:mb-40 flex flex-col md:grid md:grid-cols-2 gap-10 md:gap-24 items-center">
            <div className="space-y-6 md:space-y-8 border-t border-white/10 pt-8 md:pt-12 order-2 md:order-1">

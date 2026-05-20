@@ -113,7 +113,7 @@ export default function Home() {
           ].map((feature, i) => (
             <div key={i} className="p-10 md:p-12 bg-black flex flex-col justify-between h-72 md:h-96 group relative overflow-hidden active:bg-white/5 md:hover:bg-white/5 transition-all">
                <div className="absolute top-0 left-0 w-1 h-0 bg-urban-red group-active:h-full md:group-hover:h-full transition-all duration-500"></div>
-               <feature.icon className="text-urban-red/40 group-active:text-urban-red md:group-hover:text-urban-red transition-colors relative z-10" size={28} md:size={32} />
+               <feature.icon className="text-urban-red/40 group-active:text-urban-red md:group-hover:text-urban-red transition-colors relative z-10 w-8 h-8 md:w-10 md:h-10" />
                <div className="relative z-10">
                   <h4 className="text-xl md:text-2xl font-black uppercase italic tracking-tighter mb-3 md:mb-4">{feature.title}</h4>
                   <p className="text-[9px] md:text-[10px] uppercase tracking-widest leading-loose opacity-40 group-active:opacity-100 md:group-hover:opacity-80 transition-opacity">{feature.desc}</p>

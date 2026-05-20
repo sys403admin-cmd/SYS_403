@@ -1,6 +1,15 @@
 'use client';
 
-import Customizer from '@/components/Customizer';
+import dynamic from 'next/dynamic';
+
+const Customizer = dynamic(() => import('@/components/Customizer'), { 
+  ssr: false,
+  loading: () => (
+    <div className="h-screen bg-black flex items-center justify-center">
+      <div className="w-12 h-12 border-4 border-urban-red border-t-transparent animate-spin"></div>
+    </div>
+  )
+});
 
 export default function Laboratorio() {
   return (

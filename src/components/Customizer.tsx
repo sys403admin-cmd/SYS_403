@@ -79,69 +79,78 @@ const SystemMessage = memo(({ notification, onClose }: any) => {
 });
 SystemMessage.displayName = 'SystemMessage';
 
-const DecalItem = memo(({ design, offsetZ, targetMesh }: any) => {
+const DecalItem = memo(({ design, targetMesh }: any) => {
   const texture = useTexture(design.url);
   
   useMemo(() => { 
     if (texture) { 
       const tex = Array.isArray(texture) ? texture[0] : texture;
+      // MAX NITIDEZ Y FIDELIDAD DE COLOR
       tex.anisotropy = 16; 
       tex.colorSpace = THREE.SRGBColorSpace; 
-      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.minFilter = THREE.LinearFilter;
       tex.magFilter = THREE.LinearFilter;
+      tex.needsUpdate = true;
     } 
   }, [texture]);
 
-  // CALIBRACIÓN DINÁMICA: Ajustamos posición y rotación para realismo total
+  // CALIBRACIÓN DE PROYECCIÓN PROFUNDA
+  // Colocamos el origen de proyección lejos y usamos una profundidad grande
+  // para que el diseño "envuelva" la geometría y no sea una lámina rígida.
   const getDecalProps = () => {
-    const basePos = [...design.position];
-    const baseRot = [...design.rotation];
+    const [x, y] = design.position;
+    const [sx, sy] = design.scale;
+    const r = design.rotation[2];
     
-    // Aumentamos la profundidad de proyección (Z) para que "abrace" los pliegues de la ropa
-    const projectionDepth = 0.5; // Suficiente profundidad para envolver geometría irregular
+    const depth = 2.0; // Profundidad masiva para seguir cualquier pliegue
 
     if (design.zone === 'front') {
       return {
-        pos: [basePos[0], basePos[1] + 0.6, offsetZ] as [number, number, number],
-        rot: [0, 0, baseRot[2]] as [number, number, number]
+        pos: [x, y + 0.6, 1.0] as [number, number, number],
+        rot: [0, 0, r] as [number, number, number],
+        s: [sx, sy, depth] as [number, number, number]
       };
     }
     if (design.zone === 'back') {
       return {
-        pos: [basePos[0], basePos[1] + 0.6, -offsetZ] as [number, number, number],
-        rot: [0, Math.PI, baseRot[2]] as [number, number, number]
+        pos: [x, y + 0.6, -1.0] as [number, number, number],
+        rot: [0, Math.PI, r] as [number, number, number],
+        s: [sx, sy, depth] as [number, number, number]
       };
     }
     if (design.zone === 'sleeve-l') {
       return {
-        pos: [-0.40 + basePos[0], basePos[1] + 0.6, basePos[2]] as [number, number, number],
-        rot: [0, -Math.PI / 2, baseRot[2]] as [number, number, number]
+        pos: [-1.0, y + 0.6, x] as [number, number, number],
+        rot: [0, -Math.PI / 2, r] as [number, number, number],
+        s: [sx, sy, depth] as [number, number, number]
       };
     }
     if (design.zone === 'sleeve-r') {
       return {
-        pos: [0.40 + basePos[0], basePos[1] + 0.6, basePos[2]] as [number, number, number],
-        rot: [0, Math.PI / 2, baseRot[2]] as [number, number, number]
+        pos: [1.0, y + 0.6, -x] as [number, number, number],
+        rot: [0, Math.PI / 2, r] as [number, number, number],
+        s: [sx, sy, depth] as [number, number, number]
       };
     }
-    return { pos: [0, 0, 0] as [number, number, number], rot: [0, 0, 0] as [number, number, number] };
+    return null;
   };
 
-  const { pos, rot } = getDecalProps();
+  const props = getDecalProps();
+  if (!props) return null;
 
   return (
     <Decal 
       mesh={{ current: targetMesh } as any} 
-      position={pos} 
-      rotation={rot} 
-      scale={[design.scale[0], design.scale[1], 0.5]} // Profundidad aumentada para seguir pliegues
+      position={props.pos} 
+      rotation={props.rot} 
+      scale={props.s}
     >
       <meshStandardMaterial 
         map={texture as any} 
         transparent 
-        alphaTest={0.01}
+        alphaTest={0.001} 
         polygonOffset 
-        polygonOffsetFactor={-10} // Balanceado para evitar clipping y flickering
+        polygonOffsetFactor={-1} 
         roughness={1}
         metalness={0}
         toneMapped={false} 
@@ -162,15 +171,12 @@ const GarmentModel = memo(({ type, color, designs }: any) => {
     side: THREE.DoubleSide,
   }), [color]);
 
-  const scale = type === 'BUSO' ? 0.9 : 1.0;
-  const decalConfig = type === 'BUSO' ? { offsetZ: 0.18 } : { offsetZ: 0.15 };
-
   return (
-    <group scale={scale} position={[0, -0.6, 0]}>
+    <group scale={type === 'BUSO' ? 0.9 : 1.0} position={[0, -0.6, 0]}>
       {garmentMeshes.map((mesh) => (
         <mesh key={mesh.uuid} geometry={mesh.geometry} material={fabricMaterial} castShadow receiveShadow>
           {designs.map((d: any) => (
-            <DecalItem key={d.id} design={d} offsetZ={decalConfig.offsetZ} targetMesh={mesh} />
+            <DecalItem key={d.id} design={d} targetMesh={mesh} />
           ))}
         </mesh>
       ))}
@@ -197,7 +203,6 @@ const Viewer3D = memo(({ garment, garmentColor, designs, orbitRef }: any) => {
 });
 Viewer3D.displayName = 'Viewer3D';
 
-// Aislamos el formulario para evitar re-renders del Canvas al escribir
 const OrderForm = memo(({ onSubmit, isSending, designsCount }: any) => {
   const [formData, setFormData] = useState({ name: '', email: '', whatsapp: '', size: 'L' as any, honeypot: '' });
 
@@ -209,7 +214,6 @@ const OrderForm = memo(({ onSubmit, isSending, designsCount }: any) => {
   return (
     <form onSubmit={handleLocalSubmit} className="space-y-6 sm:space-y-8 pt-6 sm:pt-10 border-t border-white/10">
       <input type="text" name="website" className="hidden" value={formData.honeypot} onChange={e => setFormData({...formData, honeypot: e.target.value})} />
-      
       <div className="space-y-4 sm:space-y-6">
         {[
           {id: 'name', label: 'ID_FORJADOR', ph: 'NOMBRE COMPLETO'},
@@ -218,18 +222,10 @@ const OrderForm = memo(({ onSubmit, isSending, designsCount }: any) => {
         ].map((f) => (
           <div key={f.id} className="relative group">
             <span className="absolute -top-2 left-4 bg-[#020202] px-2 text-[7px] sm:text-[8px] font-black text-urban-red tracking-widest uppercase italic z-10">{f.label}</span>
-            <input 
-              type={f.type || 'text'} 
-              required 
-              className="w-full bg-white/5 border border-white/10 p-4 sm:p-5 text-xs sm:text-sm font-black uppercase outline-none focus:border-urban-red focus:bg-white/10 transition-all text-white" 
-              placeholder={f.ph}
-              value={(formData as any)[f.id]} 
-              onChange={e => setFormData({...formData, [f.id]: e.target.value})} 
-            />
+            <input type={f.type || 'text'} required className="w-full bg-white/5 border border-white/10 p-4 sm:p-5 text-xs sm:text-sm font-black uppercase outline-none focus:border-urban-red focus:bg-white/10 transition-all text-white" placeholder={f.ph} value={(formData as any)[f.id]} onChange={e => setFormData({...formData, [f.id]: e.target.value})} />
           </div>
         ))}
       </div>
-
       <div className="space-y-2 sm:space-y-3">
         <span className="text-[7px] sm:text-[8px] font-black text-[#00FF00] tracking-widest uppercase italic ml-2">Dimensión ADN (Talla)</span>
         <div className="flex gap-2">
@@ -238,7 +234,6 @@ const OrderForm = memo(({ onSubmit, isSending, designsCount }: any) => {
           ))}
         </div>
       </div>
-
       <button type="submit" disabled={designsCount === 0 || isSending} className="w-full py-5 sm:py-6 bg-white text-black font-black uppercase tracking-[0.4em] sm:tracking-[0.6em] text-xs sm:text-sm hover:bg-urban-red hover:text-white transition-all flex items-center justify-center gap-3 sm:gap-4 relative overflow-hidden group shadow-2xl">
         <span className="relative z-10">{isSending ? 'SELLANDO ADN...' : 'CERRAR FORJA'}</span>
         <Shield className="w-4 h-4 sm:w-5 sm:h-5 relative z-10 group-hover:scale-110 transition-transform" />
@@ -249,10 +244,7 @@ const OrderForm = memo(({ onSubmit, isSending, designsCount }: any) => {
 });
 OrderForm.displayName = 'OrderForm';
 
-// --- MAIN COMPONENT ---
-
 export default function Customizer() {
-  const [mounted, setMounted] = useState(false);
   const [garment, setGarment] = useState<GarmentType>('BUSO');
   const [garmentColor, setGarmentColor] = useState('#FFFFFF');
   const [designs, setDesigns] = useState<DesignInstance[]>([]);
@@ -262,10 +254,6 @@ export default function Customizer() {
   const [lastSubmissionTime, setLastSubmissionTime] = useState(0);
   const [notifications, setNotifications] = useState<any[]>([]);
   const orbitRef = useRef<any>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const notify = useCallback((type: 'error' | 'success', message: string) => {
     setNotifications(prev => [...prev, { id: Date.now(), type, message }]);
@@ -290,7 +278,6 @@ export default function Customizer() {
     if (!e.target.files?.[0]) return;
     const file = e.target.files[0];
     if (file.type !== 'image/png') { notify('error', 'PNG TRANSPARENTE REQUERIDO.'); return; }
-    
     const reader = new FileReader();
     reader.onload = () => {
       const img = new Image();
@@ -309,7 +296,6 @@ export default function Customizer() {
   const onFormSubmit = async (formData: any, resetForm: () => void) => {
     if (Date.now() - lastSubmissionTime < 30000) { notify('error', 'SISTEMA SOBRECALENTADO.'); return; }
     try { OrderSchema.parse(formData); } catch (error) { notify('error', 'DATOS INVALIDOS.'); return; }
-    
     setIsSending(true);
     try {
       const finalDesigns = await Promise.all(designs.map(async (d, i) => {
@@ -325,32 +311,20 @@ export default function Customizer() {
       await submitOrder({ ...formData, garmentType: garment, garmentColor, designs: finalDesigns });
       setLastSubmissionTime(Date.now());
       notify('success', 'ADN RECIBIDO EN EL BUNKER.');
-      
-      // WhatsApp Redirection to Admin
       const waMsg = `> *NUEVO PEDIDO SYS_403*\n\n*Cliente:* ${formData.name}\n*Email:* ${formData.email}\n*WhatsApp:* ${formData.whatsapp}\n*Prenda:* ${garment}\n*Talla:* ${formData.size}\n*Color:* ${garmentColor}\n\n_El ADN ha sido cargado al bunker. Esperando confirmación._`;
       const waUrl = `https://wa.me/573011138847?text=${encodeURIComponent(waMsg)}`;
-      
-      setTimeout(() => {
-        window.open(waUrl, '_blank');
-      }, 2000);
-
+      setTimeout(() => { window.open(waUrl, '_blank'); }, 2000);
       setDesigns([]); resetForm();
-    } catch (error: any) {
-      notify('error', `FALLA: ${error.message.toUpperCase()}`);
-    } finally { setIsSending(false); }
+    } catch (error: any) { notify('error', `FALLA: ${error.message.toUpperCase()}`); } finally { setIsSending(false); }
   };
-
-  if (!mounted) return <div className="h-screen bg-black flex items-center justify-center"><div className="w-12 h-12 border-4 border-urban-red border-t-transparent animate-spin"></div></div>;
 
   return (
     <div className="flex flex-col lg:flex-row lg:h-screen pt-20 bg-black lg:overflow-hidden text-white font-sans">
       <div className="fixed top-24 right-4 z-[9999] flex flex-col gap-4 pointer-events-none w-[90%] max-w-[350px]">
         <AnimatePresence>{notifications.map(n => <SystemMessage key={n.id} notification={n} onClose={() => setNotifications(prev => prev.filter(x => x.id !== n.id))} />)}</AnimatePresence>
       </div>
-
       <div className="flex-grow relative bg-[#050505] p-2 lg:p-8 flex items-center justify-center min-h-[50vh] sm:min-h-[60vh] lg:min-h-0 overflow-hidden">
         <Viewer3D garment={garment} garmentColor={garmentColor} designs={designs} orbitRef={orbitRef} />
-        
         <div className="absolute top-4 sm:top-8 left-4 sm:left-8 z-20 flex flex-col gap-4">
            <div className="flex gap-2">
               {['BUSO', 'CAMISA'].map((type) => (
@@ -358,7 +332,6 @@ export default function Customizer() {
               ))}
            </div>
         </div>
-
         <div className="absolute bottom-24 sm:bottom-auto sm:top-8 right-4 sm:right-8 z-20 flex flex-col gap-2 sm:gap-3 bg-black/80 backdrop-blur-xl p-3 sm:p-5 border border-white/10 shadow-2xl min-w-[120px] sm:min-w-[180px]">
            <span className="text-[8px] sm:text-[10px] font-black text-white/20 mb-1 sm:mb-2 text-center border-b border-white/5 pb-1 sm:pb-2 tracking-widest uppercase">Mapeo_ADN</span>
            <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
@@ -367,21 +340,18 @@ export default function Customizer() {
               ))}
            </div>
         </div>
-        
         <div className="absolute bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 sm:translate-x-0 sm:left-8 z-20 flex gap-1.5 sm:gap-2 bg-black/40 p-1.5 sm:p-2 border border-white/5 backdrop-blur-md">
            {['#FFFFFF', '#DACDBB', '#B59F85', '#FFB6C1', '#0D0D0D', '#333333'].map((c) => (
              <button key={c} onClick={() => setGarmentColor(c)} className={`w-6 h-6 sm:w-8 sm:h-8 border-2 ${garmentColor === c ? 'border-white scale-110 rotate-45 shadow-[0_0_15px_rgba(255,255,255,0.3)]' : 'border-transparent opacity-40 hover:opacity-100'}`} style={{ backgroundColor: c }} />
            ))}
         </div>
       </div>
-
       <div className="w-full lg:w-[480px] p-6 sm:p-8 lg:p-12 overflow-y-auto custom-scrollbar bg-[#020202] z-30 flex flex-col border-t lg:border-t-0 lg:border-l border-white/5 shrink-0">
         <div className="space-y-8 sm:space-y-10">
           <div className="space-y-2">
             <span className="text-[8px] sm:text-[10px] font-black text-urban-red tracking-[0.4em] sm:tracking-[0.5em] uppercase italic">Inyección de Código</span>
             <h3 className="text-4xl sm:text-5xl font-black uppercase italic tracking-tighter leading-none text-white glitch-text" data-text="FORJAR TU ADN">FORJAR TU ADN</h3>
           </div>
-          
           <div className="grid grid-cols-3 gap-3 sm:gap-4">
             {designs.map((d) => (
               <div key={d.id} onClick={() => { setSelectedDesignId(d.id); focusZone(d.zone); }} className={`relative aspect-square bg-black border-2 ${selectedDesignId === d.id ? 'border-urban-red shadow-[0_0_20px_rgba(255,0,0,0.2)]' : 'border-white/5'} cursor-pointer group`}>
@@ -395,7 +365,6 @@ export default function Customizer() {
                <input type="file" className="hidden" accept="image/png" onChange={(e) => { handleFileUpload(e); e.target.value = ''; }} />
             </label>
           </div>
-
           <AnimatePresence>
             {selectedDesign && (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="p-6 sm:p-8 bg-white/5 border border-white/10 space-y-6 sm:space-y-8 overflow-hidden">
@@ -419,7 +388,6 @@ export default function Customizer() {
             )}
           </AnimatePresence>
         </div>
-
         <OrderForm onSubmit={onFormSubmit} isSending={isSending} designsCount={designs.length} />
       </div>
     </div>

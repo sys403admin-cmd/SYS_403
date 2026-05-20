@@ -85,24 +85,20 @@ const DecalItem = memo(({ design, offsetZ, targetMesh }: any) => {
   useMemo(() => { 
     if (texture) { 
       const tex = Array.isArray(texture) ? texture[0] : texture;
-      // MAX NITIDEZ: Anisotropía al máximo y filtros lineales
       tex.anisotropy = 16; 
       tex.colorSpace = THREE.SRGBColorSpace; 
       tex.minFilter = THREE.LinearMipmapLinearFilter;
       tex.magFilter = THREE.LinearFilter;
-      tex.generateMipmaps = true;
-      tex.needsUpdate = true;
     } 
   }, [texture]);
 
-  // CALIBRACIÓN DINÁMICA: Ajustamos el eje X y Z según la zona
-  // Reducimos la profundidad (scale[2]) al mínimo absoluto para evitar "bleed" lateral
+  // CALIBRACIÓN DINÁMICA: Ajustamos posición y rotación para realismo total
   const getDecalProps = () => {
     const basePos = [...design.position];
     const baseRot = [...design.rotation];
     
-    // El offsetZ se ajusta ligeramente para estar "pegado" pero sin clipping
-    const depthFactor = 0.05; // Ultra-delgado para evitar sangrado a los lados
+    // Aumentamos la profundidad de proyección (Z) para que "abrace" los pliegues de la ropa
+    const projectionDepth = 0.5; // Suficiente profundidad para envolver geometría irregular
 
     if (design.zone === 'front') {
       return {
@@ -117,7 +113,6 @@ const DecalItem = memo(({ design, offsetZ, targetMesh }: any) => {
       };
     }
     if (design.zone === 'sleeve-l') {
-      // Calibración X: Ajustado de 0.38 a 0.40 para centrar mejor en el hombro
       return {
         pos: [-0.40 + basePos[0], basePos[1] + 0.6, basePos[2]] as [number, number, number],
         rot: [0, -Math.PI / 2, baseRot[2]] as [number, number, number]
@@ -134,33 +129,19 @@ const DecalItem = memo(({ design, offsetZ, targetMesh }: any) => {
 
   const { pos, rot } = getDecalProps();
 
-  // Filtrado de malla: Solo proyectar si la zona coincide (heurística por posición/nombre)
-  // Esto evita que el frente sangre a las mangas
-  const isTargetMesh = useMemo(() => {
-    if (!targetMesh.name) return true;
-    const name = targetMesh.name.toLowerCase();
-    if (design.zone === 'front' && (name.includes('sleeve') || name.includes('back'))) return false;
-    if (design.zone === 'back' && (name.includes('sleeve') || name.includes('front'))) return false;
-    if (design.zone.includes('sleeve') && (name.includes('body') || name.includes('front') || name.includes('back'))) return false;
-    return true;
-  }, [targetMesh.name, design.zone]);
-
-  if (!isTargetMesh) return null;
-
   return (
     <Decal 
       mesh={{ current: targetMesh } as any} 
       position={pos} 
       rotation={rot} 
-      // SCALE[2]: Muy pequeño para que no atraviese el brazo o el torso
-      scale={[design.scale[0], design.scale[1], 0.1]} 
+      scale={[design.scale[0], design.scale[1], 0.5]} // Profundidad aumentada para seguir pliegues
     >
       <meshStandardMaterial 
         map={texture as any} 
         transparent 
-        alphaTest={0.01} // Bajamos el test de alfa para bordes más suaves
+        alphaTest={0.01}
         polygonOffset 
-        polygonOffsetFactor={-15} // Más agresivo para que no desaparezca al escalar pequeño
+        polygonOffsetFactor={-10} // Balanceado para evitar clipping y flickering
         roughness={1}
         metalness={0}
         toneMapped={false} 

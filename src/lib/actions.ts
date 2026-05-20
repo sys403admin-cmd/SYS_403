@@ -5,7 +5,8 @@ import { Product, CustomOrder } from './store';
 import { Resend } from 'resend';
 import { getMatrixEmailTemplate } from './emails';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const RESEND_KEY = process.env.RESEND_API_KEY;
+const resend = RESEND_KEY ? new Resend(RESEND_KEY) : null;
 
 /**
  * PROTOCOLO DE ESTABILIZACIÓN TOTAL v4.1
@@ -13,13 +14,20 @@ const resend = new Resend(process.env.RESEND_API_KEY);
  */
 
 export async function getProducts() {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .order('id', { ascending: true });
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('id', { ascending: true });
 
-  if (error) return [];
-  return data as Product[];
+    if (error) {
+      console.warn("getProducts Error:", error.message);
+      return [];
+    }
+    return data as Product[];
+  } catch (e) {
+    return [];
+  }
 }
 
 export async function submitOrder(order: any) {
@@ -51,19 +59,21 @@ export async function submitOrder(order: any) {
     if (error) throw error;
 
     // Notificaciones automáticas (Diseño Matrix v2.0)
-    await resend.emails.send({
-      from: 'SYS_403 <onboarding@resend.dev>',
-      to: order.email,
-      subject: `> BREACH_CONFIRMED // ${order.name}`,
-      html: getMatrixEmailTemplate(order, false),
-    }).catch(e => console.error("Error email cliente:", e));
+    if (resend) {
+      await resend.emails.send({
+        from: 'SYS_403 <onboarding@resend.dev>',
+        to: order.email,
+        subject: `> BREACH_CONFIRMED // ${order.name}`,
+        html: getMatrixEmailTemplate(order, false),
+      }).catch(e => console.error("Error email cliente:", e));
 
-    await resend.emails.send({
-      from: 'BUNKER_ALERT <onboarding@resend.dev>',
-      to: 'sys.403admin@gmail.com',
-      subject: `> INCOMING_ADN // ${order.name}`,
-      html: getMatrixEmailTemplate(order, true),
-    }).catch(e => console.error("Error email admin:", e));
+      await resend.emails.send({
+        from: 'BUNKER_ALERT <onboarding@resend.dev>',
+        to: 'sys.403admin@gmail.com',
+        subject: `> INCOMING_ADN // ${order.name}`,
+        html: getMatrixEmailTemplate(order, true),
+      }).catch(e => console.error("Error email admin:", e));
+    }
 
     return { success: true, data: data[0] };
   } catch (error: any) {
@@ -120,19 +130,21 @@ export async function submitCatalogOrder(orderData: {
     if (orderError) throw orderError;
 
     // 3. Notificaciones Unificadas (Diseño Matrix)
-    await resend.emails.send({
-      from: 'SYS_403 <onboarding@resend.dev>',
-      to: customer.email,
-      subject: `> PEDIDO_RECIBIDO // ${customer.name}`,
-      html: getMatrixEmailTemplate(orderData, false, true),
-    }).catch(e => console.error("Error email cliente:", e));
+    if (resend) {
+      await resend.emails.send({
+        from: 'SYS_403 <onboarding@resend.dev>',
+        to: customer.email,
+        subject: `> PEDIDO_RECIBIDO // ${customer.name}`,
+        html: getMatrixEmailTemplate(orderData, false, true),
+      }).catch(e => console.error("Error email cliente:", e));
 
-    await resend.emails.send({
-      from: 'BUNKER_ALERT <onboarding@resend.dev>',
-      to: 'sys.403admin@gmail.com',
-      subject: `> INCOMING_CATALOG_ADN // ${customer.name}`,
-      html: getMatrixEmailTemplate(orderData, true, true),
-    }).catch(e => console.error("Error email admin:", e));
+      await resend.emails.send({
+        from: 'BUNKER_ALERT <onboarding@resend.dev>',
+        to: 'sys.403admin@gmail.com',
+        subject: `> INCOMING_CATALOG_ADN // ${customer.name}`,
+        html: getMatrixEmailTemplate(orderData, true, true),
+      }).catch(e => console.error("Error email admin:", e));
+    }
 
     return { success: true, orderId: data[0].id };
   } catch (error: any) {

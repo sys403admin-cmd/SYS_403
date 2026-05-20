@@ -17,10 +17,13 @@ export default function ClientShell({ children }: { children: React.ReactNode })
     setMounted(true);
   }, []);
 
+  // Durante SSR (mounted = false), renderizamos un esqueleto mínimo 
+  // que NO incluye componentes interactivos propensos a fallar en el servidor.
   if (!mounted) {
     return (
       <div className="flex flex-col min-h-screen bg-black">
-        <main className="flex-grow">{children}</main>
+        {/* Renderizamos children con cuidado, o simplemente nada para máxima seguridad */}
+        <div className="flex-grow"></div>
       </div>
     );
   }

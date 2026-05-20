@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useMemo } from 'react';
 import { products, updateProducts, Product, CustomOrder } from '@/lib/store';
 import { 
   Trash2, Plus, Package, MessageSquare, X, Upload, Palette, Target, 
@@ -48,11 +48,20 @@ function AdminDecal({ design, targetMesh, type }: { design: any, targetMesh: THR
   const texture = useTexture(design.url);
   const offsetZ = type === 'BUSO' ? 0.18 : 0.15;
 
+  useMemo(() => {
+    if (texture) {
+      (texture as any).anisotropy = 16;
+      (texture as any).colorSpace = THREE.SRGBColorSpace;
+      (texture as any).minFilter = THREE.LinearMipmapLinearFilter;
+      (texture as any).magFilter = THREE.LinearFilter;
+    }
+  }, [texture]);
+
   // Lógica de coordenadas espejo del Laboratorio para precisión total
   const getDecalProps = () => {
     const basePos = [...design.position];
     const baseRot = [...design.rotation];
-    
+
     if (design.zone === 'front') {
       return {
         pos: [basePos[0], basePos[1] + 0.6, offsetZ] as [number, number, number],
@@ -67,13 +76,13 @@ function AdminDecal({ design, targetMesh, type }: { design: any, targetMesh: THR
     }
     if (design.zone === 'sleeve-l') {
       return {
-        pos: [-0.38 + basePos[0], basePos[1] + 0.6, basePos[2]] as [number, number, number],
+        pos: [-0.40 + basePos[0], basePos[1] + 0.6, basePos[2]] as [number, number, number],
         rot: [0, -Math.PI / 2, baseRot[2]] as [number, number, number]
       };
     }
     if (design.zone === 'sleeve-r') {
       return {
-        pos: [0.38 + basePos[0], basePos[1] + 0.6, basePos[2]] as [number, number, number],
+        pos: [0.40 + basePos[0], basePos[1] + 0.6, basePos[2]] as [number, number, number],
         rot: [0, Math.PI / 2, baseRot[2]] as [number, number, number]
       };
     }
@@ -82,25 +91,38 @@ function AdminDecal({ design, targetMesh, type }: { design: any, targetMesh: THR
 
   const { pos, rot } = getDecalProps();
 
+  // Filtrado de malla para evitar sangrado (espejo del Lab)
+  const isTargetMesh = useMemo(() => {
+    if (!targetMesh.name) return true;
+    const name = targetMesh.name.toLowerCase();
+    if (design.zone === 'front' && (name.includes('sleeve') || name.includes('back'))) return false;
+    if (design.zone === 'back' && (name.includes('sleeve') || name.includes('front'))) return false;
+    if (design.zone.includes('sleeve') && (name.includes('body') || name.includes('front') || name.includes('back'))) return false;
+    return true;
+  }, [targetMesh.name, design.zone]);
+
+  if (!isTargetMesh) return null;
+
   return (
     <Decal 
       mesh={{ current: targetMesh } as any} 
       position={pos} 
       rotation={rot} 
-      scale={[design.scale[0], design.scale[1], 0.2]}
+      scale={[design.scale[0], design.scale[1], 0.1]}
     >
       <meshStandardMaterial 
         map={texture as any} 
         transparent 
-        alphaTest={0.05} 
+        alphaTest={0.01} 
         polygonOffset 
-        polygonOffsetFactor={-10}
+        polygonOffsetFactor={-15}
+        roughness={1}
+        metalness={0}
         toneMapped={false}
       />
     </Decal>
   );
 }
-
 export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');

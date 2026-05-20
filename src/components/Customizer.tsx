@@ -81,23 +81,29 @@ SystemMessage.displayName = 'SystemMessage';
 
 const DecalItem = memo(({ design, offsetZ, targetMesh }: any) => {
   const texture = useTexture(design.url);
+  
   useMemo(() => { 
     if (texture) { 
       const tex = Array.isArray(texture) ? texture[0] : texture;
-      (tex as any).anisotropy = 16; 
-      (tex as any).colorSpace = THREE.SRGBColorSpace; 
-      (tex as any).minFilter = THREE.LinearMipmapLinearFilter;
-      (tex as any).magFilter = THREE.LinearFilter;
+      // MAX NITIDEZ: Anisotropía al máximo y filtros lineales
+      tex.anisotropy = 16; 
+      tex.colorSpace = THREE.SRGBColorSpace; 
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      tex.generateMipmaps = true;
+      tex.needsUpdate = true;
     } 
   }, [texture]);
 
-  // Cálculo de posición y orientación ultra-preciso por zona
+  // CALIBRACIÓN DINÁMICA: Ajustamos el eje X y Z según la zona
+  // Reducimos la profundidad (scale[2]) al mínimo absoluto para evitar "bleed" lateral
   const getDecalProps = () => {
     const basePos = [...design.position];
     const baseRot = [...design.rotation];
     
-    // Ajuste de profundidad (Z) según zona para evitar colisiones internas
-    // y asegurar que el diseño no "atraviese" el modelo
+    // El offsetZ se ajusta ligeramente para estar "pegado" pero sin clipping
+    const depthFactor = 0.05; // Ultra-delgado para evitar sangrado a los lados
+
     if (design.zone === 'front') {
       return {
         pos: [basePos[0], basePos[1] + 0.6, offsetZ] as [number, number, number],
@@ -111,14 +117,15 @@ const DecalItem = memo(({ design, offsetZ, targetMesh }: any) => {
       };
     }
     if (design.zone === 'sleeve-l') {
+      // Calibración X: Ajustado de 0.38 a 0.40 para centrar mejor en el hombro
       return {
-        pos: [-0.38 + basePos[0], basePos[1] + 0.6, basePos[2]] as [number, number, number],
+        pos: [-0.40 + basePos[0], basePos[1] + 0.6, basePos[2]] as [number, number, number],
         rot: [0, -Math.PI / 2, baseRot[2]] as [number, number, number]
       };
     }
     if (design.zone === 'sleeve-r') {
       return {
-        pos: [0.38 + basePos[0], basePos[1] + 0.6, basePos[2]] as [number, number, number],
+        pos: [0.40 + basePos[0], basePos[1] + 0.6, basePos[2]] as [number, number, number],
         rot: [0, Math.PI / 2, baseRot[2]] as [number, number, number]
       };
     }
@@ -127,19 +134,33 @@ const DecalItem = memo(({ design, offsetZ, targetMesh }: any) => {
 
   const { pos, rot } = getDecalProps();
 
+  // Filtrado de malla: Solo proyectar si la zona coincide (heurística por posición/nombre)
+  // Esto evita que el frente sangre a las mangas
+  const isTargetMesh = useMemo(() => {
+    if (!targetMesh.name) return true;
+    const name = targetMesh.name.toLowerCase();
+    if (design.zone === 'front' && (name.includes('sleeve') || name.includes('back'))) return false;
+    if (design.zone === 'back' && (name.includes('sleeve') || name.includes('front'))) return false;
+    if (design.zone.includes('sleeve') && (name.includes('body') || name.includes('front') || name.includes('back'))) return false;
+    return true;
+  }, [targetMesh.name, design.zone]);
+
+  if (!isTargetMesh) return null;
+
   return (
     <Decal 
       mesh={{ current: targetMesh } as any} 
       position={pos} 
       rotation={rot} 
-      scale={[design.scale[0], design.scale[1], 0.2]} // Profundidad fija pequeña para evitar bleed
+      // SCALE[2]: Muy pequeño para que no atraviese el brazo o el torso
+      scale={[design.scale[0], design.scale[1], 0.1]} 
     >
       <meshStandardMaterial 
         map={texture as any} 
         transparent 
-        alphaTest={0.05} 
+        alphaTest={0.01} // Bajamos el test de alfa para bordes más suaves
         polygonOffset 
-        polygonOffsetFactor={-10} // Forzar que esté siempre por encima de la tela
+        polygonOffsetFactor={-15} // Más agresivo para que no desaparezca al escalar pequeño
         roughness={1}
         metalness={0}
         toneMapped={false} 
@@ -250,6 +271,7 @@ OrderForm.displayName = 'OrderForm';
 // --- MAIN COMPONENT ---
 
 export default function Customizer() {
+  const [mounted, setMounted] = useState(false);
   const [garment, setGarment] = useState<GarmentType>('BUSO');
   const [garmentColor, setGarmentColor] = useState('#FFFFFF');
   const [designs, setDesigns] = useState<DesignInstance[]>([]);
@@ -259,6 +281,10 @@ export default function Customizer() {
   const [lastSubmissionTime, setLastSubmissionTime] = useState(0);
   const [notifications, setNotifications] = useState<any[]>([]);
   const orbitRef = useRef<any>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const notify = useCallback((type: 'error' | 'success', message: string) => {
     setNotifications(prev => [...prev, { id: Date.now(), type, message }]);
@@ -332,6 +358,8 @@ export default function Customizer() {
       notify('error', `FALLA: ${error.message.toUpperCase()}`);
     } finally { setIsSending(false); }
   };
+
+  if (!mounted) return <div className="h-screen bg-black flex items-center justify-center"><div className="w-12 h-12 border-4 border-urban-red border-t-transparent animate-spin"></div></div>;
 
   return (
     <div className="flex flex-col lg:flex-row lg:h-screen pt-20 bg-black lg:overflow-hidden text-white font-sans">

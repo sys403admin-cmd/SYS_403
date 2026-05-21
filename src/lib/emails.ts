@@ -36,9 +36,9 @@ export const getMatrixEmailTemplate = (data: any, isInternal: boolean, isCatalog
       <div style="margin: 20px 0;">
         <span style="color: ${primaryColor}; font-size: 9px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold;">ESPECIFICACIONES_ADN:</span>
         <div style="background: rgba(255,255,255,0.03); padding: 15px; border: 1px solid rgba(255,255,255,0.05); margin-top: 10px;">
-          <span style="color: #ffffff; font-size: 13px; font-weight: bold; display: block;">PRENDA: ${data.garmentType}</span>
+          <span style="color: #ffffff; font-size: 13px; font-weight: bold; display: block;">PRENDA: ${data.garmenttype || data.garmentType}</span>
           <span style="color: #ffffff; font-size: 13px; font-weight: bold; display: block;">TALLA: ${data.size}</span>
-          <span style="color: #ffffff; font-size: 13px; font-weight: bold; display: block;">COLOR_BASE: ${data.garmentColor}</span>
+          <span style="color: #ffffff; font-size: 13px; font-weight: bold; display: block;">COLOR_BASE: ${data.garmentcolor || data.garmentColor}</span>
         </div>
         <div style="margin-top: 15px;">
           <span style="color: ${accentColor}; font-size: 9px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; display: block; margin-bottom: 10px;">FRAGMENTOS_INYECTADOS:</span>

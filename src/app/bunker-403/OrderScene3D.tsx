@@ -56,15 +56,15 @@ function DecalRenderer({ design, targetMesh }: { design: any, targetMesh: THREE.
   );
 }
 function GarmentPreview({ order }: { order: any }) {
-  const modelPath = order.garmentType === 'CAMISA' ? '/models/camisa.glb' : '/models/buso.glb';
+  const modelPath = order.garmenttype === 'CAMISA' ? '/models/camisa.glb' : '/models/buso.glb';
   const { nodes } = useGLTF(modelPath) as any;
   const meshes = Object.values(nodes).filter((n: any) => n.isMesh) as THREE.Mesh[];
 
   const mat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: new THREE.Color(order.garmentColor || '#FFFFFF'),
+    color: new THREE.Color(order.garmentcolor || '#FFFFFF'),
     roughness: 1,
     metalness: 0
-  }), [order.garmentColor]);
+  }), [order.garmentcolor]);
 
   // Manejar el nuevo formato envuelto { payload: [...] }
   const rawDesigns = typeof order.designs === 'string' ? JSON.parse(order.designs) : order.designs;

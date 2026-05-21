@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Trash2, Plus, Minus, ShoppingCart, Zap, Terminal } from 'lucide-react';
+import { X, Trash2, Plus, Minus, ShoppingCart, Zap, Terminal, CheckCircle2 } from 'lucide-react';
 import { useCart } from '@/lib/cartContext';
 import { sounds } from '@/lib/sounds';
 import { submitCatalogOrder } from '@/lib/actions';
@@ -13,10 +13,11 @@ export default function CartDrawer() {
   const [customer, setCustomer] = React.useState({ name: '', email: '', whatsapp: '' });
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
+  const [showSuccess, setShowSuccess] = React.useState(false);
+
   const handleCheckout = async () => {
     if (!customer.name || !customer.email || !customer.whatsapp) {
       sounds.playStatic();
-      alert("ID_REQUERIDO: Por favor completa tus datos.");
       return;
     }
 
@@ -39,12 +40,16 @@ export default function CartDrawer() {
         const fullMessage = `> *INFORME_DE_EXTRACCIÓN_SYS_403*\n\n*SUJETO:* ${customer.name}\n*COMMS_WA:* ${customer.whatsapp}\n\n*CONTENIDO_DE_LA_BÓVEDA:*\n${itemsList}\n\n*VALOR_TOTAL_EXTRAÍDO:* $${totalPrice.toFixed(2)}\n\n_El ADN ha sido interceptado. Esperando sellado final en el bunker._`;
         const waUrl = `https://wa.me/573011138847?text=${encodeURIComponent(fullMessage)}`;
 
+        setShowSuccess(true);
         clearCart();
-        setIsCartOpen(false);
         setCustomer({ name: '', email: '', whatsapp: '' });
         
-        window.open(waUrl, '_blank');
-        alert("PROTOCOLO_FINALIZADO: El ADN ha sido inyectado con éxito.");
+        // Delay for the premium notification to be seen
+        setTimeout(() => {
+          window.open(waUrl, '_blank');
+          setIsCartOpen(false);
+          setShowSuccess(false);
+        }, 3000);
       }
     } catch (error: any) {
       alert(`FALLA_SISTEMA: ${error.message}`);
@@ -57,6 +62,45 @@ export default function CartDrawer() {
     <AnimatePresence>
       {isCartOpen && (
         <>
+          {/* Success Overlay Notification */}
+          <AnimatePresence>
+            {showSuccess && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[1100] flex items-center justify-center p-6"
+              >
+                <div className="absolute inset-0 bg-black/95 backdrop-blur-md"></div>
+                <div className="relative bg-black border-l-8 border-[#00FF00] p-10 shadow-[0_0_100px_rgba(0,255,0,0.2)] max-w-lg w-full overflow-hidden">
+                   <div className="absolute inset-0 matrix-bg opacity-20"></div>
+                   <div className="relative z-10 space-y-6 text-center">
+                      <div className="w-20 h-20 bg-[#00FF00]/10 border-2 border-[#00FF00] mx-auto flex items-center justify-center animate-pulse">
+                         <CheckCircle2 size={40} className="text-[#00FF00]" />
+                      </div>
+                      <div className="space-y-2">
+                        <h2 className="text-4xl font-black italic tracking-tighter text-white">PEDIDO_RECONOCIDO</h2>
+                        <p className="text-[10px] font-black text-[#00FF00] uppercase tracking-[0.5em]">ADN inyectado con éxito</p>
+                      </div>
+                      <p className="text-sm font-bold text-white/60 leading-relaxed">
+                        El sistema ha validado tu estructura. Redirigiendo al terminal de WhatsApp para el sellado final...
+                      </p>
+                      <div className="pt-4">
+                        <div className="h-1 bg-white/10 w-full overflow-hidden">
+                          <motion.div 
+                            initial={{ x: '-100%' }}
+                            animate={{ x: '0%' }}
+                            transition={{ duration: 3 }}
+                            className="h-full bg-[#00FF00]"
+                          />
+                        </div>
+                      </div>
+                   </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Backdrop */}
           <motion.div 
             initial={{ opacity: 0 }}

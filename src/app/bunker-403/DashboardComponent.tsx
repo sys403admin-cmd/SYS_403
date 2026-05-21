@@ -261,17 +261,21 @@ export default function AdminDashboard() {
                       <div className="flex flex-wrap gap-4 lg:w-[250px] shrink-0">
                         {(() => {
                           const raw = typeof order.designs === 'string' ? JSON.parse(order.designs) : order.designs;
-                          const isCatalog = order.garmentType === 'CATALOGO';
+                          const isCatalog = order.garmenttype === 'CATALOGO';
                           
                           if (isCatalog) {
-                            // Mostrar imágenes de productos del catálogo
+                            // Mostrar imágenes de productos del catálogo con detalles visuales
                             return Array.isArray(raw) ? raw.map((item: any, i: number) => (
-                              <div key={i} className="flex flex-col gap-2 w-[100px]">
-                                 <div className="relative aspect-square bg-black border-2 border-[#00FF00]/30 overflow-hidden shadow-lg flex items-center justify-center group-hover:border-[#00FF00] transition-colors">
+                              <div key={i} className="flex flex-col gap-2 w-[110px]">
+                                 <div className="relative aspect-square bg-black border-2 border-[#00FF00]/40 overflow-hidden shadow-lg group-hover:border-[#00FF00] transition-colors">
                                    <Image src={item.product.images[0]} alt="" fill className="object-cover" />
                                  </div>
-                                 <div className="bg-[#00FF00]/5 px-2 py-1 border-l border-[#00FF00]">
-                                    <p className="text-[6px] font-black text-[#00FF00] uppercase tracking-tighter truncate">{item.selectedSize} // {item.quantity} UDS</p>
+                                 <div className="bg-[#00FF00]/10 px-2 py-1.5 border-l-2 border-[#00FF00] space-y-1">
+                                    <p className="text-[7px] font-black text-[#00FF00] uppercase tracking-tighter truncate">{item.product.name}</p>
+                                    <div className="flex justify-between items-center">
+                                       <span className="text-[6px] font-black text-white/60 uppercase">{item.selectedSize} // {item.quantity} UDS</span>
+                                       <div className="w-2 h-2 border border-white/20" style={{ backgroundColor: item.selectedColor }}></div>
+                                    </div>
                                  </div>
                               </div>
                             )) : null;
@@ -302,8 +306,10 @@ export default function AdminDashboard() {
                                      <span className="text-xl font-black text-urban-red">{order.whatsapp}</span>
                                   </div>
                                   <div className="flex gap-4 items-center">
-                                     <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Tipo:</span>
-                                     <span className="text-xl font-black text-white">{order.garmentType === 'CATALOGO' ? 'ORDEN_CATÁLOGO' : 'FORJA_ADN_CUSTOM'}</span>
+                                     <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Protocolo:</span>
+                                     <span className={`text-xl font-black ${order.garmenttype === 'CATALOGO' ? 'text-[#00FF00]' : 'text-white'}`}>
+                                       {order.garmenttype === 'CATALOGO' ? 'ORDEN_CATÁLOGO' : 'FORJA_ADN_CUSTOM'}
+                                     </span>
                                   </div>
                                </div>
                             </div>
@@ -316,7 +322,7 @@ export default function AdminDashboard() {
                             <div className="space-y-2">
                                <span className="text-[10px] font-black uppercase tracking-widest text-white/20 italic">Especificaciones</span>
                                <p className="text-2xl font-black uppercase italic text-white">
-                                 {order.garmentType === 'CATALOGO' ? 'MÚLTIPLES_ITEMS' : `${order.garmentType} // TALLA ${order.size}`}
+                                 {order.garmenttype === 'CATALOGO' ? 'MÚLTIPLES_ITEMS' : `${order.garmenttype} // TALLA ${order.size}`}
                                </p>
                             </div>
                             <div className="space-y-4">
@@ -344,7 +350,7 @@ export default function AdminDashboard() {
                     </div>
 
                     <div className="flex gap-6">
-                       {order.garmentType !== 'CATALOGO' && (
+                       {order.garmenttype !== 'CATALOGO' && (
                          <button 
                            onClick={() => { sounds.playClick(); setPreviewOrder(order); }}
                            className="flex-grow bg-[#00FF00] text-black py-10 font-black uppercase text-2xl hover:bg-white transition-all italic shadow-[0_0_60px_rgba(0,255,0,0.1)] group/btn relative overflow-hidden"
@@ -355,7 +361,7 @@ export default function AdminDashboard() {
                        )}
                        
                        <a 
-                         href={`https://wa.me/${order.whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`> SYS_403 // INFORME_TECNICO\n\nSaludos Forjador ${order.name}.\nTu ADN ha sido analizado. Estamos listos para iniciar la forja de tu ${order.garmentType} (Talla: ${order.size}).\n\nConfirma para proceder con el sellado.`)}`}
+                         href={`https://wa.me/${order.whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`> SYS_403 // INFORME_TECNICO\n\nSaludos Forjador ${order.name}.\nTu ADN ha sido analizado. Estamos listos para iniciar la forja de tu ${order.garmenttype} (Talla: ${order.size}).\n\nConfirma para proceder con el sellado.`)}`}
                          target="_blank"
                          rel="noopener noreferrer"
                          onMouseEnter={() => sounds.playHover()}

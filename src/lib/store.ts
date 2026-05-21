@@ -23,15 +23,9 @@ export interface CustomOrder {
   name: string;
   email: string;
   whatsapp: string;
-  garmentType: 'CAMISA' | 'BUSO' | 'CATALOGO';
-  garmentColor: string;
-  designs: {
-    url: string;
-    position: [number, number, number];
-    scale: [number, number, number];
-    rotation: [number, number, number];
-    zone: string;
-  }[];
+  garmenttype: 'CAMISA' | 'BUSO' | 'CATALOGO';
+  garmentcolor: string;
+  designs: string | any[]; // JSON string from DB or array
   size: string;
   status: string;
   date: string;

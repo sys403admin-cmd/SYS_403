@@ -308,7 +308,7 @@ export default function Customizer() {
            </div>
         </div>
         <div className="absolute bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 sm:translate-x-0 sm:left-8 z-20 flex gap-1.5 sm:gap-2 bg-black/40 p-1.5 sm:p-2 border border-white/5 backdrop-blur-md">
-           {['#FFFFFF', '#DACDBB', '#B59F85', '#FFB6C1', '#0D0D0D', '#333333'].map((c) => (
+           {['#000000', '#FFFFFF', '#F5F5F5', '#D2B48C'].map((c) => (
              <button key={c} onClick={() => setGarmentColor(c)} className={`w-6 h-6 sm:w-8 sm:h-8 border-2 ${garmentColor === c ? 'border-white scale-110 rotate-45 shadow-[0_0_15px_rgba(255,255,255,0.3)]' : 'border-transparent opacity-40 hover:opacity-100'}`} style={{ backgroundColor: c }} />
            ))}
         </div>

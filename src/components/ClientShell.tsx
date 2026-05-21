@@ -17,25 +17,24 @@ export default function ClientShell({ children }: { children: React.ReactNode })
     setMounted(true);
   }, []);
 
-  // Durante SSR (mounted = false), renderizamos un esqueleto mínimo 
-  // que NO incluye componentes interactivos propensos a fallar en el servidor.
-  if (!mounted) {
-    return (
-      <div className="flex flex-col min-h-screen bg-black">
-        {/* Renderizamos children con cuidado, o simplemente nada para máxima seguridad */}
-        <div className="flex-grow"></div>
-      </div>
-    );
-  }
-
   return (
     <CartProvider>
-      <Preloader />
-      <CustomCursor />
-      <CartDrawer />
-      <Navbar />
-      <main className="flex-grow">{children}</main>
-      <Footer />
+      {/* Componentes de Cliente: Solo se renderizan tras el montaje para evitar errores SSR */}
+      {mounted && (
+        <>
+          <Preloader />
+          <CustomCursor />
+          <CartDrawer />
+          <Navbar />
+        </>
+      )}
+      
+      {/* El contenido principal (children) se renderiza siempre para SEO y fluidez */}
+      <main className="flex-grow">
+        {children}
+      </main>
+      
+      {mounted && <Footer />}
     </CartProvider>
   );
 }

@@ -34,11 +34,11 @@ export default function CartDrawer() {
       if (res.success) {
         // Preparar resumen detallado para WhatsApp (Lore-heavy)
         const itemsList = cart.map((item, index) => 
-          `*FRAGMENTO_0${index + 1}:* ${item.product.name}%0A  _Dimensión:_ ${item.selectedSize}%0A  _Croma:_ ${item.selectedColor}%0A  _Cant:_ ${item.quantity} Uds%0A  _Visual:_ ${item.product.images[0]}`
-        ).join('%0A%0A');
+          `FRAGMENTO_0${index + 1}: ${item.product.name}\n- Dimensión: ${item.selectedSize}\n- Croma: ${item.selectedColor}\n- Cant: ${item.quantity} Uds\n- Visual: ${item.product.images[0]}`
+        ).join('\n\n');
         
-        const waMsg = `> *INFORME_DE_EXTRACCIÓN_SYS_403*%0A%0A*FORJADOR:* ${customer.name}%0A*COMMS_WA:* ${customer.whatsapp}%0A%0A*CONTENIDO_DE_LA_BÓVEDA:*%0A${itemsList}%0A%0A*VALOR_TOTAL_EXTRAÍDO:* $${totalPrice.toFixed(2)}%0A%0A_El ADN ha sido interceptado. Esperando sellado final en el bunker._`;
-        const waUrl = `https://wa.me/573011138847?text=${waMsg}`;
+        const waMsg = `> *INFORME_DE_EXTRACCIÓN_SYS_403*\n\n*FORJADOR:* ${customer.name}\n*COMMS_WA:* ${customer.whatsapp}\n\n*CONTENIDO_DE_LA_BÓVEDA:*\n${itemsList}\n\n*VALOR_TOTAL_EXTRAÍDO:* $${totalPrice.toFixed(2)}\n\n_El ADN ha sido interceptado. Esperando sellado final en el bunker._`;
+        const waUrl = `https://wa.me/573011138847?text=${encodeURIComponent(waMsg)}`;
 
         setShowSuccess(true);
         clearCart();
@@ -50,8 +50,11 @@ export default function CartDrawer() {
           setIsCartOpen(false);
           setShowSuccess(false);
         }, 3000);
+      } else {
+        throw new Error(res.error || 'SISTEMA_FUERA_DE_LINEA');
       }
     } catch (error: any) {
+      sounds.playStatic();
       alert(`FALLA_SISTEMA: ${error.message}`);
     } finally {
       setIsSubmitting(false);

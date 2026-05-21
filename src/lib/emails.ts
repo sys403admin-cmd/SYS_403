@@ -16,18 +16,24 @@ export const getMatrixEmailTemplate = (data: any, isInternal: boolean, isCatalog
   let orderDetails = '';
   if (isCatalog) {
     const itemsHtml = data.items.map((item: any) => `
-      <div style="border-left: 2px solid ${accentColor}; padding-left: 15px; margin-bottom: 15px;">
-        <span style="color: ${accentColor}; font-size: 10px; display: block;">ITEM_CAPTURADO</span>
-        <span style="color: #ffffff; font-weight: bold; font-size: 14px;">${item.product.name}</span><br/>
-        <span style="color: rgba(255,255,255,0.5); font-size: 11px;">TALLA: ${item.selectedSize} // COLOR: ${item.selectedColor}</span>
+      <div style="border-left: 2px solid ${accentColor}; padding-left: 15px; margin-bottom: 25px; display: table; width: 100%;">
+        <div style="display: table-cell; width: 80px; vertical-align: top;">
+           <img src="${item.product.images[0]}" width="70" height="90" style="object-fit: cover; border: 1px solid rgba(255,255,255,0.1); background: #000;" />
+        </div>
+        <div style="display: table-cell; vertical-align: top; padding-left: 15px;">
+           <span style="color: ${accentColor}; font-size: 10px; display: block; font-weight: bold; letter-spacing: 2px;">ITEM_CAPTURADO</span>
+           <span style="color: #ffffff; font-weight: 900; font-size: 16px; text-transform: uppercase;">${item.product.name}</span><br/>
+           <span style="color: rgba(255,255,255,0.6); font-size: 11px; font-weight: bold; letter-spacing: 1px;">DIMENSIÓN: ${item.selectedSize} // CROMA: ${item.selectedColor}</span><br/>
+           <span style="color: #ffffff; font-size: 12px; font-weight: bold; margin-top: 5px; display: block;">CANTIDAD: ${item.quantity} UDS</span>
+        </div>
       </div>
     `).join('');
     orderDetails = `
-      <div style="margin: 20px 0;">
-        <span style="color: ${primaryColor}; font-size: 9px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold;">ARCHIVOS_EXTRAIDOS:</span>
-        <div style="margin-top: 10px;">${itemsHtml}</div>
-        <div style="border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 10px; margin-top: 10px;">
-          <span style="color: #ffffff; font-size: 18px; font-weight: 900;">VALOR_TOTAL: $${data.total.toFixed(2)}</span>
+      <div style="margin: 30px 0;">
+        <span style="color: ${primaryColor}; font-size: 10px; text-transform: uppercase; letter-spacing: 3px; font-weight: 900;">ARCHIVOS_EXTRAÍDOS_DE_LA_BÓVEDA:</span>
+        <div style="margin-top: 20px;">${itemsHtml}</div>
+        <div style="border-top: 2px solid rgba(255,255,255,0.05); padding-top: 20px; margin-top: 20px;">
+          <span style="color: #ffffff; font-size: 24px; font-weight: 900; font-style: italic;">VALOR_TOTAL: $${data.total.toFixed(2)}</span>
         </div>
       </div>
     `;

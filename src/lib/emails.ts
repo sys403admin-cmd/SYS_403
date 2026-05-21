@@ -102,7 +102,7 @@ export const getMatrixEmailTemplate = (data: any, isInternal: boolean, isCatalog
               <p style="color: #ffffff; font-size: 18px; font-weight: 900; font-style: italic; border-left: 4px solid ${primaryColor}; padding-left: 20px; margin-bottom: 30px;">${mainMessage}</p>
               
               <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 25px; margin: 35px 0; border-radius: 4px;">
-                <span style="color: ${primaryColor}; font-size: 10px; font-weight: 900; letter-spacing: 3px; display: block; margin-bottom: 12px; text-transform: uppercase;">SUJETO_IDENTIFICADO:</span>
+                <span style="color: ${primaryColor}; font-size: 10px; font-weight: 900; letter-spacing: 3px; display: block; margin-bottom: 12px; text-transform: uppercase;">FORJADOR_IDENTIFICADO:</span>
                 <span style="font-size: 18px; font-weight: 900; color: #ffffff; display: block; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">${(data.customer?.name || data.name).toUpperCase()}</span>
                 <span style="font-size: 13px; color: ${accentColor}; display: block; margin-top: 8px; font-weight: bold;">ENLACE_WHATSAPP: ${data.customer?.whatsapp || data.whatsapp}</span>
               </div>

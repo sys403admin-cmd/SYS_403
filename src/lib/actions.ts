@@ -92,17 +92,20 @@ export async function submitCatalogOrder(orderData: {
 
     // 1. Descontar Stock y Registrar Pedido
     for (const item of items) {
-      const { data: product } = await supabaseAdmin
+      const { data: product, error: fetchErr } = await supabaseAdmin
         .from('products')
         .select('stock')
         .eq('id', item.product.id)
         .single();
 
-      if (product && product.stock >= item.quantity) {
-        await supabaseAdmin
+      if (product) {
+        const newStock = Math.max(0, product.stock - item.quantity);
+        const { error: updateErr } = await supabaseAdmin
           .from('products')
-          .update({ stock: product.stock - item.quantity })
+          .update({ stock: newStock })
           .eq('id', item.product.id);
+        
+        if (updateErr) console.error("STOCK_UPDATE_ERROR:", updateErr.message);
       }
     }
 

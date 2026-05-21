@@ -90,22 +90,32 @@ export async function submitCatalogOrder(orderData: {
     const resend = initResend();
     const { customer, items, total } = orderData;
 
-    // 1. Descontar Stock y Registrar Pedido
+    // 1. Descontar Stock con Validación de Servidor
     for (const item of items) {
-      const { data: product, error: fetchErr } = await supabaseAdmin
+      // Obtener stock actual directamente de la DB para evitar datos obsoletos del cliente
+      const { data: currentProduct, error: fetchErr } = await supabaseAdmin
         .from('products')
         .select('stock')
         .eq('id', item.product.id)
         .single();
 
-      if (product) {
-        const newStock = Math.max(0, product.stock - item.quantity);
+      if (fetchErr) {
+        console.error(`ERROR_FETCH_STOCK [ID:${item.product.id}]:`, fetchErr.message);
+        continue;
+      }
+
+      if (currentProduct) {
+        const newStock = Math.max(0, currentProduct.stock - item.quantity);
         const { error: updateErr } = await supabaseAdmin
           .from('products')
           .update({ stock: newStock })
           .eq('id', item.product.id);
         
-        if (updateErr) console.error("STOCK_UPDATE_ERROR:", updateErr.message);
+        if (updateErr) {
+          console.error(`ERROR_UPDATE_STOCK [ID:${item.product.id}]:`, updateErr.message);
+        } else {
+          console.log(`STOCK_DECREMENTADO [ID:${item.product.id}]: ${currentProduct.stock} -> ${newStock}`);
+        }
       }
     }
 

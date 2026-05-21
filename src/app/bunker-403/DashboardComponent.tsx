@@ -261,17 +261,34 @@ export default function AdminDashboard() {
                       <div className="flex flex-wrap gap-4 lg:w-[250px] shrink-0">
                         {(() => {
                           const raw = typeof order.designs === 'string' ? JSON.parse(order.designs) : order.designs;
-                          const designsList = raw.payload || raw;
-                          return Array.isArray(designsList) ? designsList.map((d: any, i: number) => (
-                            <div key={i} className="flex flex-col gap-2 w-[100px]">
-                               <div className="relative aspect-square bg-black border-2 border-white/10 overflow-hidden shadow-lg flex items-center justify-center group-hover:border-urban-red transition-colors">
-                                 {d.url ? <Image src={d.url} alt="" fill className="object-contain p-1" /> : <Zap size={16} className="text-white/10" />}
-                               </div>
-                               <div className="bg-white/5 px-2 py-1 border-l border-urban-red">
-                                  <p className="text-[6px] font-black text-[#00FF00] uppercase tracking-tighter truncate">{d.zone}</p>
-                               </div>
-                            </div>
-                          )) : null;
+                          const isCatalog = order.garmentType === 'CATALOGO';
+                          
+                          if (isCatalog) {
+                            // Mostrar imágenes de productos del catálogo
+                            return Array.isArray(raw) ? raw.map((item: any, i: number) => (
+                              <div key={i} className="flex flex-col gap-2 w-[100px]">
+                                 <div className="relative aspect-square bg-black border-2 border-[#00FF00]/30 overflow-hidden shadow-lg flex items-center justify-center group-hover:border-[#00FF00] transition-colors">
+                                   <Image src={item.product.images[0]} alt="" fill className="object-cover" />
+                                 </div>
+                                 <div className="bg-[#00FF00]/5 px-2 py-1 border-l border-[#00FF00]">
+                                    <p className="text-[6px] font-black text-[#00FF00] uppercase tracking-tighter truncate">{item.selectedSize} // {item.quantity} UDS</p>
+                                 </div>
+                              </div>
+                            )) : null;
+                          } else {
+                            // Mostrar fragmentos de ADN del laboratorio
+                            const designsList = raw.payload || raw;
+                            return Array.isArray(designsList) ? designsList.map((d: any, i: number) => (
+                              <div key={i} className="flex flex-col gap-2 w-[100px]">
+                                 <div className="relative aspect-square bg-black border-2 border-white/10 overflow-hidden shadow-lg flex items-center justify-center group-hover:border-urban-red transition-colors">
+                                   {d.url ? <Image src={d.url} alt="" fill className="object-contain p-1" /> : <Zap size={16} className="text-white/10" />}
+                                 </div>
+                                 <div className="bg-white/5 px-2 py-1 border-l border-urban-red">
+                                    <p className="text-[6px] font-black text-[#00FF00] uppercase tracking-tighter truncate">{d.zone}</p>
+                                 </div>
+                              </div>
+                            )) : null;
+                          }
                         })()}
                       </div>
                       
@@ -285,8 +302,8 @@ export default function AdminDashboard() {
                                      <span className="text-xl font-black text-urban-red">{order.whatsapp}</span>
                                   </div>
                                   <div className="flex gap-4 items-center">
-                                     <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Talla:</span>
-                                     <span className="text-xl font-black text-white">{order.size}</span>
+                                     <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Tipo:</span>
+                                     <span className="text-xl font-black text-white">{order.garmentType === 'CATALOGO' ? 'ORDEN_CATÁLOGO' : 'FORJA_ADN_CUSTOM'}</span>
                                   </div>
                                </div>
                             </div>
@@ -297,8 +314,10 @@ export default function AdminDashboard() {
                          
                          <div className="grid grid-cols-2 gap-10 pt-4">
                             <div className="space-y-2">
-                               <span className="text-[10px] font-black uppercase tracking-widest text-white/20 italic">Arquitectura</span>
-                               <p className="text-2xl font-black uppercase italic text-white">{order.garmentType}</p>
+                               <span className="text-[10px] font-black uppercase tracking-widest text-white/20 italic">Especificaciones</span>
+                               <p className="text-2xl font-black uppercase italic text-white">
+                                 {order.garmentType === 'CATALOGO' ? 'MÚLTIPLES_ITEMS' : `${order.garmentType} // TALLA ${order.size}`}
+                               </p>
                             </div>
                             <div className="space-y-4">
                                <span className="text-[10px] font-black uppercase tracking-widest text-white/20 italic">GESTIÓN_ESTADO</span>
@@ -325,13 +344,15 @@ export default function AdminDashboard() {
                     </div>
 
                     <div className="flex gap-6">
-                       <button 
-                         onClick={() => { sounds.playClick(); setPreviewOrder(order); }}
-                         className="flex-grow bg-[#00FF00] text-black py-10 font-black uppercase text-2xl hover:bg-white transition-all italic shadow-[0_0_60px_rgba(0,255,0,0.1)] group/btn relative overflow-hidden"
-                       >
-                          <span className="relative z-10 flex items-center justify-center gap-6">VISUALIZAR ADN <Eye size={32} /></span>
-                          <div className="absolute inset-0 bg-white translate-y-[100%] group-hover/btn:translate-y-0 transition-transform duration-500"></div>
-                       </button>
+                       {order.garmentType !== 'CATALOGO' && (
+                         <button 
+                           onClick={() => { sounds.playClick(); setPreviewOrder(order); }}
+                           className="flex-grow bg-[#00FF00] text-black py-10 font-black uppercase text-2xl hover:bg-white transition-all italic shadow-[0_0_60px_rgba(0,255,0,0.1)] group/btn relative overflow-hidden"
+                         >
+                            <span className="relative z-10 flex items-center justify-center gap-6">VISUALIZAR ADN <Eye size={32} /></span>
+                            <div className="absolute inset-0 bg-white translate-y-[100%] group-hover/btn:translate-y-0 transition-transform duration-500"></div>
+                         </button>
+                       )}
                        
                        <a 
                          href={`https://wa.me/${order.whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`> SYS_403 // INFORME_TECNICO\n\nSaludos Forjador ${order.name}.\nTu ADN ha sido analizado. Estamos listos para iniciar la forja de tu ${order.garmentType} (Talla: ${order.size}).\n\nConfirma para proceder con el sellado.`)}`}

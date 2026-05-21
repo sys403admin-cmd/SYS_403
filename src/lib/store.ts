@@ -23,7 +23,7 @@ export interface CustomOrder {
   name: string;
   email: string;
   whatsapp: string;
-  garmentType: 'CAMISA' | 'BUSO';
+  garmentType: 'CAMISA' | 'BUSO' | 'CATALOGO';
   garmentColor: string;
   designs: {
     url: string;

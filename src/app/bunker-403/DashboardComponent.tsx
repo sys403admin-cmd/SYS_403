@@ -48,6 +48,8 @@ export default function AdminDashboard() {
     if (error) console.error("Error fetching live orders:", error);
   };
 
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+
   const updateOrderStatus = async (orderId: number, newStatus: string) => {
     sounds.playClick();
     const { error } = await supabase
@@ -61,7 +63,6 @@ export default function AdminDashboard() {
   };
 
   const deleteOrder = async (orderId: number) => {
-    if (!confirm("> ¿CONFIRMAR ELIMINACIÓN DE REGISTRO ADN?")) return;
     sounds.playStatic();
     const { error } = await supabase
       .from('orders')
@@ -70,6 +71,8 @@ export default function AdminDashboard() {
     
     if (!error) {
       setLiveOrders(prev => prev.filter(o => o.id !== orderId));
+      setDeleteConfirmId(null);
+      sounds.playClick();
     }
   };
 
@@ -371,7 +374,7 @@ export default function AdminDashboard() {
                        </a>
 
                        <button 
-                         onClick={() => deleteOrder(order.id)}
+                         onClick={() => { sounds.playStatic(); setDeleteConfirmId(order.id); }}
                          className="w-24 border-8 border-white/10 flex items-center justify-center hover:bg-urban-red hover:border-urban-red hover:text-white transition-all group/x"
                        >
                           <Trash size={40} className="group-hover:scale-110 transition-transform" />
@@ -381,6 +384,48 @@ export default function AdminDashboard() {
                 ))
               )}
             </div>
+
+            {/* Modal de Purga de ADN (Confirmación de Eliminación) */}
+            <AnimatePresence>
+              {deleteConfirmId && (
+                <motion.div 
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }} 
+                  exit={{ opacity: 0 }} 
+                  className="fixed inset-0 z-[2000] bg-black/95 backdrop-blur-xl flex items-center justify-center p-8"
+                >
+                  <div className="max-w-md w-full border-t-[12px] border-urban-red bg-[#0D0D0D] p-12 shadow-[0_0_100px_rgba(230,57,70,0.3)] space-y-8 relative overflow-hidden">
+                    <div className="absolute inset-0 matrix-bg opacity-10 pointer-events-none"></div>
+                    <div className="relative z-10 text-center space-y-6">
+                       <div className="w-20 h-20 bg-urban-red/10 border-2 border-urban-red mx-auto flex items-center justify-center animate-pulse">
+                          <AlertTriangle size={40} className="text-urban-red" />
+                       </div>
+                       <div className="space-y-2">
+                          <h2 className="text-4xl font-black italic tracking-tighter text-white">PURGAR_REGISTRO</h2>
+                          <p className="text-[10px] font-black text-urban-red uppercase tracking-[0.5em]">Protocolo de Borrado Permanente</p>
+                       </div>
+                       <p className="text-sm font-bold text-white/40 leading-relaxed uppercase tracking-widest">
+                          ¿ESTÁS SEGURO DE ELIMINAR ESTE ADN? ESTA ACCIÓN NO SE PUEDE DESHACER EN EL BÚNKER.
+                       </p>
+                       <div className="flex gap-4 pt-4">
+                          <button 
+                            onClick={() => { sounds.playClick(); setDeleteConfirmId(null); }}
+                            className="flex-grow py-5 bg-white/5 border-2 border-white/10 text-white font-black uppercase tracking-widest text-xs hover:bg-white/10 transition-all"
+                          >
+                             ABORTAR
+                          </button>
+                          <button 
+                            onClick={() => deleteOrder(deleteConfirmId)}
+                            className="flex-grow py-5 bg-urban-red text-white font-black uppercase tracking-widest text-xs hover:bg-white hover:text-black transition-all shadow-[0_0_30px_rgba(230,57,70,0.5)]"
+                          >
+                             CONFIRMAR_BORRADO
+                          </button>
+                       </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Modal de Previsualización 3D Matrix */}
             <AnimatePresence>

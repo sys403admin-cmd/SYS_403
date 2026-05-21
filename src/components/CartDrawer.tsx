@@ -31,12 +31,12 @@ export default function CartDrawer() {
       });
 
       if (res.success) {
-        // Prepare Detailed WhatsApp Message (Full Cart)
-        const itemsList = cart.map(item => 
-          `• *${item.product.name}*%0A  _Talla: ${item.selectedSize} // Color: ${item.selectedColor}_%0A  _Cant: ${item.quantity}_`
+        // Preparar resumen detallado para WhatsApp (Lore-heavy)
+        const itemsList = cart.map((item, index) => 
+          `*FRAGMENTO_0${index + 1}:* ${item.product.name}%0A  _Dimensión:_ ${item.selectedSize}%0A  _Croma:_ ${item.selectedColor}%0A  _Cant:_ ${item.quantity} Uds`
         ).join('%0A%0A');
         
-        const waMsg = `> *NUEVO PEDIDO SYS_403*%0A%0A*CLIENTE:* ${customer.name}%0A*WHATSAPP:* ${customer.whatsapp}%0A%0A*DETALLE DEL ADN:*%0A${itemsList}%0A%0A*VALOR TOTAL:* $${totalPrice.toFixed(2)}%0A%0A_ADN en camino al bunker. Esperando sellado final._`;
+        const waMsg = `> *INFORME_DE_EXTRACCIÓN_SYS_403*%0A%0A*SUJETO:* ${customer.name}%0A*COMMS_WA:* ${customer.whatsapp}%0A%0A*CONTENIDO_DE_LA_BÓVEDA:*%0A${itemsList}%0A%0A*VALOR_TOTAL_EXTRAÍDO:* $${totalPrice.toFixed(2)}%0A%0A_El ADN ha sido interceptado. Esperando sellado final en el bunker._`;
         const waUrl = `https://wa.me/573011138847?text=${waMsg}`;
 
         clearCart();
@@ -44,7 +44,7 @@ export default function CartDrawer() {
         setCustomer({ name: '', email: '', whatsapp: '' });
         
         window.open(waUrl, '_blank');
-        alert("ORDEN_SELLADA: El ADN ha sido inyectado en el sistema.");
+        alert("PROTOCOLO_FINALIZADO: El ADN ha sido inyectado con éxito.");
       }
     } catch (error: any) {
       alert(`FALLA_SISTEMA: ${error.message}`);

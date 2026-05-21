@@ -11,152 +11,9 @@ import Image from 'next/image';
 import { sounds } from '@/lib/sounds';
 import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, ContactShadows, Decal, Environment, Center, useTexture, Float, useGLTF } from '@react-three/drei';
-import * as THREE from 'three';
+import OrderScene3D from './OrderScene3D';
 
-// Componente de Previsualización 3D para el Admin
-function OrderPreview3D({ order }: { order: CustomOrder }) {
-  const [errorOccurred, setErrorOccurred] = useState(false);
-
-  if (errorOccurred) {
-    return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-black/40 text-urban-red p-4 text-center">
-        <AlertTriangle size={32} className="mb-2" />
-        <p className="text-[10px] font-black uppercase tracking-widest leading-tight">FALLA_EN_RECONSTRUCCION_3D<br/>ADN_POSIBLEMENTE_CORRUPTO</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="w-full h-full relative group">
-      <Canvas shadows camera={{ position: [0, 0, 4.5], fov: 45 }} onCreated={({ gl }) => {
-        gl.setClearColor('#050505');
-      }} onError={(err) => {
-        console.error("CANVAS_ERROR:", err);
-        setErrorOccurred(true);
-      }}>
-        <Suspense fallback={null}>
-          <ambientLight intensity={1.5} />
-          <spotLight position={[5, 5, 5]} intensity={10} castShadow />
-          <Environment preset="night" />
-          <Center>
-             <GarmentPreview order={order} />
-          </Center>
-          <OrbitControls enablePan={false} minDistance={2} maxDistance={6} rotateSpeed={0.5} autoRotate autoRotateSpeed={0.5} />
-          <ContactShadows position={[0, -1.2, 0]} opacity={0.6} scale={10} blur={3} far={2} />
-        </Suspense>
-      </Canvas>
-    </div>
-  );
-}
-
-function GarmentPreview({ order }: { order: CustomOrder }) {
-  const modelPath = order.garmentType === 'CAMISA' ? '/models/camisa.glb' : '/models/buso.glb';
-  const { nodes } = useGLTF(modelPath) as any;
-  const meshes = Object.values(nodes).filter((n: any) => n.isMesh) as THREE.Mesh[];
-
-  const mat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: new THREE.Color(order.garmentColor),
-    roughness: 1,
-    metalness: 0
-  }), [order.garmentColor]);
-
-  const rawDesigns = typeof order.designs === 'string' ? JSON.parse(order.designs) : order.designs;
-  const designsList = rawDesigns.payload || rawDesigns;
-
-  return (
-    <group scale={1.8} position={[0, -1, 0]}>
-      {meshes.map((mesh) => (
-        <mesh key={mesh.uuid} geometry={mesh.geometry} material={mat}>
-          {Array.isArray(designsList) && designsList.map((d: any, i: number) => (
-            <AdminDecal key={i} design={d} targetMesh={mesh} />
-          ))}
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-function AdminDecal({ design, targetMesh }: { design: any, targetMesh: THREE.Mesh }) {
-  // Verificación de integridad de URL para evitar crash
-  const [hasError, setHasError] = useState(false);
-  
-  // Drei useTexture hook logic
-  const texture = useTexture(design.url);
-
-  useMemo(() => {
-    if (texture && !hasError) {
-      (texture as any).anisotropy = 16;
-      (texture as any).colorSpace = THREE.SRGBColorSpace;
-      (texture as any).minFilter = THREE.LinearFilter;
-      (texture as any).magFilter = THREE.LinearFilter;
-    }
-  }, [texture, hasError]);
-
-  if (hasError || !design.url) return null;
-
-  // Lógica de coordenadas espejo del Laboratorio (Deep Inward Projection)
-  const getDecalProps = () => {
-    const [x, y] = design.position;
-    const [sx, sy] = design.scale;
-    const r = design.rotation[2];
-    const depth = 2.0;
-
-    if (design.zone === 'front') {
-      return {
-        pos: [x, y + 0.6, 1.0] as [number, number, number],
-        rot: [0, 0, r] as [number, number, number],
-        s: [sx, sy, depth] as [number, number, number]
-      };
-    }
-    if (design.zone === 'back') {
-      return {
-        pos: [x, y + 0.6, -1.0] as [number, number, number],
-        rot: [0, Math.PI, r] as [number, number, number],
-        s: [sx, sy, depth] as [number, number, number]
-      };
-    }
-    if (design.zone === 'sleeve-l') {
-      return {
-        pos: [-1.0, y + 0.6, x] as [number, number, number],
-        rot: [0, -Math.PI / 2, r] as [number, number, number],
-        s: [sx, sy, depth] as [number, number, number]
-      };
-    }
-    if (design.zone === 'sleeve-r') {
-      return {
-        pos: [1.0, y + 0.6, -x] as [number, number, number],
-        rot: [0, Math.PI / 2, r] as [number, number, number],
-        s: [sx, sy, depth] as [number, number, number]
-      };
-    }
-    return null;
-  };
-
-  const props = getDecalProps();
-  if (!props) return null;
-
-  return (
-    <Decal 
-      mesh={{ current: targetMesh } as any} 
-      position={props.pos} 
-      rotation={props.rot} 
-      scale={props.s}
-    >
-      <meshStandardMaterial 
-        map={texture as any} 
-        transparent 
-        alphaTest={0.001} 
-        polygonOffset 
-        polygonOffsetFactor={-1}
-        roughness={1}
-        metalness={0}
-        toneMapped={false}
-      />
-    </Decal>
-  );
-}export default function AdminDashboard() {
+export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [loginAttempts, setLoginAttempts] = useState(0);
@@ -519,18 +376,7 @@ function AdminDecal({ design, targetMesh }: { design: any, targetMesh: THREE.Mes
                     </div>
                     
                     <div className="flex-grow relative cursor-crosshair">
-                       <Canvas shadows camera={{ position: [0, 0, 3.5], fov: 40 }}>
-                          <Suspense fallback={null}>
-                             <ambientLight intensity={1} />
-                             <spotLight position={[10, 10, 10]} intensity={10} />
-                             <Environment preset="studio" />
-                             <Center>
-                                <OrderPreview3D order={previewOrder} />
-                             </Center>
-                             <OrbitControls />
-                             <ContactShadows position={[0, -1.2, 0]} opacity={0.4} scale={10} blur={2.5} far={2} />
-                          </Suspense>
-                       </Canvas>
+                       <OrderScene3D order={previewOrder} />
                     </div>
 
                     <div className="p-8 bg-white/5 border-t border-white/10 flex justify-between items-center font-mono text-[10px] text-[#00FF00]">

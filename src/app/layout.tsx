@@ -14,22 +14,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://sys403.online"),
   title: "SYS_403 | Forjar Tu ADN",
   description: "Lo que el sistema te niega, nosotros lo convertimos en estética. SYS_403 es un bloque total sólido de streetwear exclusivo // Acceso Denegado.",
   openGraph: {
     title: "SYS_403 | Forjar Tu ADN",
     description: "No somos una marca de ropa. Somos un código de error total sólido con identidad propia. Viste el glitch.",
-    url: "https://sys403.online",
     siteName: "SYS_403",
-    images: [
-      {
-        url: "/sys_403.png",
-        width: 800,
-        height: 800,
-        alt: "SYS_403 Logo",
-      },
-    ],
+    images: ["/sys_403.png"],
     locale: "es_CO",
     type: "website",
   },

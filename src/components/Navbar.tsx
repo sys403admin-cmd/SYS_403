@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,7 +17,19 @@ const navItems = [
 export default function Navbar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const { totalItems, setIsCartOpen } = useCart();
+  const { totalItems, setIsCartOpen, cart } = useCart();
+  const [showNotification, setShowNotification] = useState(false);
+  const [lastCartSize, setLastCartSize] = useState(0);
+
+  // Efecto para detectar inyección de ADN al carrito
+  useEffect(() => {
+    if (cart.length > lastCartSize) {
+      setShowNotification(true);
+      const timer = setTimeout(() => setShowNotification(false), 4000);
+      return () => clearTimeout(timer);
+    }
+    setLastCartSize(cart.length);
+  }, [cart.length, lastCartSize]);
 
   return (
     <>
@@ -80,6 +92,32 @@ export default function Navbar() {
         </button>
       </div>
     </nav>
+
+    {/* Notificación de Inyección ADN */}
+    <AnimatePresence>
+      {showNotification && (
+        <motion.div 
+          initial={{ y: -100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -100, opacity: 0 }}
+          className="fixed top-24 left-1/2 -translate-x-1/2 z-[500] w-[90%] max-w-md"
+        >
+          <div className="bg-black border-l-8 border-urban-red p-4 shadow-[0_0_50px_rgba(230,57,70,0.3)] relative overflow-hidden">
+             <div className="absolute inset-0 matrix-bg opacity-10 pointer-events-none"></div>
+             <div className="flex items-center gap-4 relative z-10">
+                <div className="bg-urban-red p-2 animate-pulse">
+                   <Zap size={20} className="text-white" />
+                </div>
+                <div>
+                   <p className="text-[10px] font-black text-urban-red uppercase tracking-[0.4em]">BREACH_CONFIRMED</p>
+                   <p className="text-sm font-black text-white uppercase italic tracking-tighter">ADN inyectado en la bóveda con éxito.</p>
+                </div>
+             </div>
+             <div className="absolute bottom-0 left-0 h-1 bg-urban-red animate-progress-bar"></div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
 
     {/* Mobile Overlay Menu */}
     <AnimatePresence>

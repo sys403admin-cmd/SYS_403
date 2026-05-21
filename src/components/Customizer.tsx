@@ -80,12 +80,12 @@ const SystemMessage = memo(({ notification, onClose }: any) => {
 SystemMessage.displayName = 'SystemMessage';
 
 const DecalItem = memo(({ design, targetMesh }: any) => {
+  // Verificación de URL antes del hook no es posible, pero aseguramos que el padre filtre
   const texture = useTexture(design.url);
   
   useMemo(() => { 
     if (texture) { 
       const tex = Array.isArray(texture) ? texture[0] : texture;
-      // MAX NITIDEZ Y FIDELIDAD DE COLOR
       tex.anisotropy = 16; 
       tex.colorSpace = THREE.SRGBColorSpace; 
       tex.minFilter = THREE.LinearFilter;
@@ -94,43 +94,23 @@ const DecalItem = memo(({ design, targetMesh }: any) => {
     } 
   }, [texture]);
 
-  // CALIBRACIÓN DE PROYECCIÓN PROFUNDA
-  // Colocamos el origen de proyección lejos y usamos una profundidad grande
-  // para que el diseño "envuelva" la geometría y no sea una lámina rígida.
   const getDecalProps = () => {
-    const [x, y] = design.position;
-    const [sx, sy] = design.scale;
-    const r = design.rotation[2];
-    
-    const depth = 2.0; // Profundidad masiva para seguir cualquier pliegue
+    const [x, y] = design.position || [0, 0, 0];
+    const [sx, sy] = design.scale || [0.3, 0.3, 0.3];
+    const r = (design.rotation && design.rotation[2]) || 0;
+    const depth = 2.0;
 
     if (design.zone === 'front') {
-      return {
-        pos: [x, y + 0.6, 1.0] as [number, number, number],
-        rot: [0, 0, r] as [number, number, number],
-        s: [sx, sy, depth] as [number, number, number]
-      };
+      return { pos: [x, y + 0.6, 1.0] as [number, number, number], rot: [0, 0, r] as [number, number, number], s: [sx, sy, depth] as [number, number, number] };
     }
     if (design.zone === 'back') {
-      return {
-        pos: [x, y + 0.6, -1.0] as [number, number, number],
-        rot: [0, Math.PI, r] as [number, number, number],
-        s: [sx, sy, depth] as [number, number, number]
-      };
+      return { pos: [x, y + 0.6, -1.0] as [number, number, number], rot: [0, Math.PI, r] as [number, number, number], s: [sx, sy, depth] as [number, number, number] };
     }
     if (design.zone === 'sleeve-l') {
-      return {
-        pos: [-1.0, y + 0.6, x] as [number, number, number],
-        rot: [0, -Math.PI / 2, r] as [number, number, number],
-        s: [sx, sy, depth] as [number, number, number]
-      };
+      return { pos: [-1.0, y + 0.6, x] as [number, number, number], rot: [0, -Math.PI / 2, r] as [number, number, number], s: [sx, sy, depth] as [number, number, number] };
     }
     if (design.zone === 'sleeve-r') {
-      return {
-        pos: [1.0, y + 0.6, -x] as [number, number, number],
-        rot: [0, Math.PI / 2, r] as [number, number, number],
-        s: [sx, sy, depth] as [number, number, number]
-      };
+      return { pos: [1.0, y + 0.6, -x] as [number, number, number], rot: [0, Math.PI / 2, r] as [number, number, number], s: [sx, sy, depth] as [number, number, number] };
     }
     return null;
   };
@@ -139,22 +119,8 @@ const DecalItem = memo(({ design, targetMesh }: any) => {
   if (!props) return null;
 
   return (
-    <Decal 
-      mesh={{ current: targetMesh } as any} 
-      position={props.pos} 
-      rotation={props.rot} 
-      scale={props.s}
-    >
-      <meshStandardMaterial 
-        map={texture as any} 
-        transparent 
-        alphaTest={0.001} 
-        polygonOffset 
-        polygonOffsetFactor={-1} 
-        roughness={1}
-        metalness={0}
-        toneMapped={false} 
-      />
+    <Decal mesh={{ current: targetMesh } as any} position={props.pos} rotation={props.rot} scale={props.s}>
+      <meshStandardMaterial map={texture as any} transparent alphaTest={0.001} polygonOffset polygonOffsetFactor={-1} roughness={1} metalness={0} toneMapped={false} />
     </Decal>
   );
 });
@@ -176,7 +142,8 @@ const GarmentModel = memo(({ type, color, designs }: any) => {
       {garmentMeshes.map((mesh) => (
         <mesh key={mesh.uuid} geometry={mesh.geometry} material={fabricMaterial} castShadow receiveShadow>
           {designs.map((d: any) => (
-            <DecalItem key={d.id} design={d} targetMesh={mesh} />
+            // FILTRO DE SEGURIDAD: Solo inyectar si hay URL
+            d.url ? <DecalItem key={d.id} design={d} targetMesh={mesh} /> : null
           ))}
         </mesh>
       ))}

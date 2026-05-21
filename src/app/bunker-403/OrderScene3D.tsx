@@ -6,6 +6,7 @@ import { OrbitControls, ContactShadows, Decal, Environment, Center, useTexture, 
 import * as THREE from 'three';
 
 function AdminDecal({ design, targetMesh }: { design: any, targetMesh: THREE.Mesh }) {
+  // Solo llamamos al hook si la URL es válida para evitar el crash "Could not load undefined"
   const texture = useTexture(design.url);
 
   useMemo(() => {
@@ -17,12 +18,10 @@ function AdminDecal({ design, targetMesh }: { design: any, targetMesh: THREE.Mes
     }
   }, [texture]);
 
-  if (!design.url) return null;
-
   const getDecalProps = () => {
-    const [x, y] = design.position;
-    const [sx, sy] = design.scale;
-    const r = design.rotation[2];
+    const [x, y] = design.position || [0, 0, 0];
+    const [sx, sy] = design.scale || [0.3, 0.3, 0.3];
+    const r = (design.rotation && design.rotation[2]) || 0;
     const depth = 2.0;
 
     if (design.zone === 'front') {
@@ -56,20 +55,22 @@ function GarmentPreview({ order }: { order: any }) {
   const meshes = Object.values(nodes).filter((n: any) => n.isMesh) as THREE.Mesh[];
 
   const mat = useMemo(() => new THREE.MeshStandardMaterial({
-    color: new THREE.Color(order.garmentColor),
+    color: new THREE.Color(order.garmentColor || '#FFFFFF'),
     roughness: 1,
     metalness: 0
   }), [order.garmentColor]);
 
+  // Manejar el nuevo formato envuelto { payload: [...] }
   const rawDesigns = typeof order.designs === 'string' ? JSON.parse(order.designs) : order.designs;
-  const designsList = rawDesigns.payload || rawDesigns;
+  const designsList = (rawDesigns?.payload || rawDesigns || []) as any[];
 
   return (
     <group scale={1.8} position={[0, -1, 0]}>
       {meshes.map((mesh) => (
         <mesh key={mesh.uuid} geometry={mesh.geometry} material={mat}>
           {Array.isArray(designsList) && designsList.map((d: any, i: number) => (
-            <AdminDecal key={i} design={d} targetMesh={mesh} />
+            // FILTRO CRÍTICO: Solo renderizar si tiene URL válida
+            d.url ? <AdminDecal key={i} design={d} targetMesh={mesh} /> : null
           ))}
         </mesh>
       ))}

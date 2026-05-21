@@ -4,9 +4,16 @@ import React, { Suspense, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, ContactShadows, Decal, Environment, Center, useTexture, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-
 function AdminDecal({ design, targetMesh }: { design: any, targetMesh: THREE.Mesh }) {
-  // Solo llamamos al hook si la URL es válida para evitar el crash "Could not load undefined"
+  // GUARDIA SUPREMA: Evitar que cualquier valor no-string o URL vacía llegue al loader
+  const validUrl = typeof design.url === 'string' && design.url.startsWith('http');
+
+  if (!validUrl) return null;
+
+  return <DecalRenderer design={design} targetMesh={targetMesh} />;
+}
+
+function DecalRenderer({ design, targetMesh }: { design: any, targetMesh: THREE.Mesh }) {
   const texture = useTexture(design.url);
 
   useMemo(() => {
@@ -48,7 +55,6 @@ function AdminDecal({ design, targetMesh }: { design: any, targetMesh: THREE.Mes
     </Decal>
   );
 }
-
 function GarmentPreview({ order }: { order: any }) {
   const modelPath = order.garmentType === 'CAMISA' ? '/models/camisa.glb' : '/models/buso.glb';
   const { nodes } = useGLTF(modelPath) as any;

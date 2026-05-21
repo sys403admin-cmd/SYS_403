@@ -31,9 +31,12 @@ export default function CartDrawer() {
       });
 
       if (res.success) {
-        // Prepare WhatsApp Message
-        const itemsList = cart.map(item => `- ${item.product.name} [Talla: ${item.selectedSize}] (${item.selectedColor}) x${item.quantity}`).join('%0A');
-        const waMsg = `> *NUEVO PEDIDO CATALOGO SYS_403*%0A%0A*Cliente:* ${customer.name}%0A*Items:*%0A${itemsList}%0A%0A*TOTAL:* $${totalPrice.toFixed(2)}%0A%0A_ADN en camino al bunker._`;
+        // Prepare Detailed WhatsApp Message (Full Cart)
+        const itemsList = cart.map(item => 
+          `• *${item.product.name}*%0A  _Talla: ${item.selectedSize} // Color: ${item.selectedColor}_%0A  _Cant: ${item.quantity}_`
+        ).join('%0A%0A');
+        
+        const waMsg = `> *NUEVO PEDIDO SYS_403*%0A%0A*CLIENTE:* ${customer.name}%0A*WHATSAPP:* ${customer.whatsapp}%0A%0A*DETALLE DEL ADN:*%0A${itemsList}%0A%0A*VALOR TOTAL:* $${totalPrice.toFixed(2)}%0A%0A_ADN en camino al bunker. Esperando sellado final._`;
         const waUrl = `https://wa.me/573011138847?text=${waMsg}`;
 
         clearCart();

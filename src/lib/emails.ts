@@ -66,13 +66,14 @@ export const getMatrixEmailTemplate = (data: any, isInternal: boolean, isCatalog
           .wrapper { background-color: ${bgColor}; padding: 40px 20px; }
           .container { max-width: 600px; margin: 0 auto; border: 1px solid ${primaryColor}; background: #080808; padding: 40px; position: relative; }
           .scanline { position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: rgba(255,0,0,0.1); }
-          .header { border-bottom: 1px solid ${primaryColor}; padding-bottom: 20px; margin-bottom: 30px; }
-          .logo { font-size: 24px; font-weight: 900; letter-spacing: -1px; }
+          .header { border-bottom: 1px solid ${primaryColor}; padding-bottom: 20px; margin-bottom: 30px; display: flex; align-items: center; gap: 20px; }
+          .logo-box { width: 60px; height: 60px; background: white; padding: 5px; border: 2px solid ${primaryColor}; display: flex; align-items: center; justify-content: center; }
+          .logo-text { font-size: 24px; font-weight: 900; letter-spacing: -1px; flex-grow: 1; }
           .glitch { color: ${accentColor}; }
           .tag { display: inline-block; background: ${primaryColor}; color: white; font-size: 10px; padding: 3px 10px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; }
           .message { font-size: 14px; line-height: 1.6; color: #dddddd; margin-bottom: 30px; }
           .footer { border-top: 1px solid rgba(255,255,255,0.1); margin-top: 40px; padding-top: 20px; font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 3px; }
-          .btn { display: inline-block; border: 1px solid ${accentColor}; color: ${accentColor}; padding: 12px 25px; text-decoration: none; font-size: 12px; font-weight: bold; margin-top: 20px; }
+          .signature { margin-top: 30px; font-weight: bold; font-style: italic; color: #ffffff; }
         </style>
       </head>
       <body>
@@ -80,8 +81,10 @@ export const getMatrixEmailTemplate = (data: any, isInternal: boolean, isCatalog
           <div class="container">
             <div class="scanline"></div>
             <div class="header">
-              <div class="logo">>SYS_403 // <span class="glitch">REPORT_ID_${reportId}</span></div>
-              <div style="font-size: 9px; color: #666; margin-top: 5px; letter-spacing: 2px;">ARCHITECTURE_STREETWEAR_SYSTEM // NODE_MEDELLIN</div>
+              <div class="logo-box">
+                <img src="https://sys403.online/sys_403.png" width="50" height="50" style="object-fit: contain;" />
+              </div>
+              <div class="logo-text">>SYS_403 // <span class="glitch">REPORT_ID_${reportId}</span></div>
             </div>
 
             <div class="tag">${isInternal ? 'INTRUSION_DETECTED' : 'BREACH_LOGGED'}</div>
@@ -100,10 +103,15 @@ export const getMatrixEmailTemplate = (data: any, isInternal: boolean, isCatalog
               <p style="font-size: 13px; opacity: 0.8; margin-top: 30px; border-left: 2px solid ${primaryColor}; padding-left: 15px;">
                 ${subMessage}
               </p>
+
+              <div class="signature">
+                -- ATENTAMENTE: EL_NÚCLEO_SYS403<br/>
+                "ESTÉTICA SIN PERMISO"
+              </div>
             </div>
 
             <div class="footer">
-              ESTADO: SÓLIDO // ACCESO_DENEGADO // SYS_403_BUNKER
+              ESTADO: SÓLIDO // ACCESO_DENEGADO // SYS_403_BUNKER // 2026
             </div>
           </div>
         </div>

@@ -41,7 +41,7 @@ function OrderPreview3D({ order }: { order: CustomOrder }) {
           <spotLight position={[5, 5, 5]} intensity={10} castShadow />
           <Environment preset="night" />
           <Center>
-            <GarmentPreview order={order} />
+             <GarmentPreview order={order} />
           </Center>
           <OrbitControls enablePan={false} minDistance={2} maxDistance={6} rotateSpeed={0.5} autoRotate autoRotateSpeed={0.5} />
           <ContactShadows position={[0, -1.2, 0]} opacity={0.6} scale={10} blur={3} far={2} />
@@ -56,21 +56,20 @@ function GarmentPreview({ order }: { order: CustomOrder }) {
   const { nodes } = useGLTF(modelPath) as any;
   const meshes = Object.values(nodes).filter((n: any) => n.isMesh) as THREE.Mesh[];
 
-  const mat = new THREE.MeshStandardMaterial({
+  const mat = useMemo(() => new THREE.MeshStandardMaterial({
     color: new THREE.Color(order.garmentColor),
     roughness: 1,
     metalness: 0
-  });
+  }), [order.garmentColor]);
 
-  // Manejar el nuevo formato envuelto { payload: [...] }
   const rawDesigns = typeof order.designs === 'string' ? JSON.parse(order.designs) : order.designs;
-  const designs = rawDesigns.payload || rawDesigns;
+  const designsList = rawDesigns.payload || rawDesigns;
 
   return (
     <group scale={1.8} position={[0, -1, 0]}>
       {meshes.map((mesh) => (
         <mesh key={mesh.uuid} geometry={mesh.geometry} material={mat}>
-          {Array.isArray(designs) && designs.map((d: any, i: number) => (
+          {Array.isArray(designsList) && designsList.map((d: any, i: number) => (
             <AdminDecal key={i} design={d} targetMesh={mesh} />
           ))}
         </mesh>

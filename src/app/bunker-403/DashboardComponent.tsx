@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense, useMemo } from 'react';
+import React, { useState, useEffect, Suspense, useMemo, memo } from 'react';
 import { Product, CustomOrder } from '@/lib/store';
 import { 
   Trash2, Plus, Package, MessageSquare, X, Upload, Palette, Target, 

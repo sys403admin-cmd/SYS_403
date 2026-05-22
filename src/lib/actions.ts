@@ -18,6 +18,7 @@ import { revalidatePath } from 'next/cache';
 
 export async function getProducts() {
   try {
+    // Forzar lectura fresca de la DB ignorando el caché de Next.js
     const { data, error } = await supabase
       .from('products')
       .select('*')
@@ -105,20 +106,30 @@ export async function updateProduct(id: number, updates: Partial<Product>) {
 
 export async function deleteProduct(id: number) {
   try {
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceKey) throw new Error('CONFIG_ERROR: No se puede purgar sin llave maestra.');
+
     const supabaseAdmin = getSupabaseAdmin();
+    console.log(`> INICIANDO_PURGA_PRODUCTO: ID_${id}`);
+    
     const { error } = await supabaseAdmin
       .from('products')
       .delete()
       .eq('id', id);
 
-    if (error) throw new Error(`DB_DELETE_ERROR: ${error.message}`);
+    if (error) {
+      console.error('DB_DELETE_FAILURE:', error.message);
+      throw new Error(`FALLA_ELIMINACION_DB: ${error.message}`);
+    }
     
     revalidatePath('/revista');
     revalidatePath('/bunker-403');
+    revalidatePath('/');
 
+    console.log(`> PURGA_COMPLETA: ID_${id}`);
     return { success: true };
   } catch (error: any) {
-    console.error('DELETE_PRODUCT_FAILURE:', error.message);
+    console.error('--- ERROR_PURGA_SISTEMA ---', error.message);
     return { success: false, error: error.message };
   }
 }
@@ -151,6 +162,8 @@ export async function submitOrder(order: any) {
       .select();
 
     if (error) throw new Error(`DB_ERROR: ${error.message}`);
+
+    revalidatePath('/bunker-403');
 
     // Notificaciones
     if (resend && order.email) {
@@ -249,6 +262,8 @@ export async function submitCatalogOrder(orderData: {
       .select();
 
     if (orderError) throw new Error(`ORDER_ERROR: ${orderError.message}`);
+
+    revalidatePath('/bunker-403');
 
     // 3. Notificaciones
     if (resend && customer.email) {

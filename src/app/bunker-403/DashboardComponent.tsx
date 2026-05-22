@@ -251,6 +251,10 @@ export default function AdminDashboard() {
       setLocalProducts(prev => prev.filter(p => p.id !== id));
       setProductDeleteId(null);
       sounds.playClick();
+      alert("SISTEMA_LIMPIO: Producto eliminado permanentemente.");
+    } else {
+      console.error("FALLA_PURGA_PRODUCTO:", res.error);
+      alert(`FALLA_CRITICA_AL_ELIMINAR: ${res.error}`);
     }
   };
 
@@ -288,7 +292,12 @@ export default function AdminDashboard() {
 
   const handleFileAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
+      const MAX_SIZE = 4 * 1024 * 1024; // 4MB límite de Vercel
       Array.from(e.target.files).forEach(file => {
+        if (file.size > MAX_SIZE) {
+          alert(`ARCHIVO_DEMASIADO_GRANDE: "${file.name}" supera los 4MB. Redúcelo antes de subir.`);
+          return;
+        }
         const reader = new FileReader();
         reader.onload = () => {
           if (reader.readyState === 2) {

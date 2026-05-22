@@ -308,7 +308,9 @@ export default function AdminDashboard() {
     sounds.playClick();
     
     try {
-      // 1. Subir imágenes a Supabase Storage
+      console.log("> INICIANDO_INYECCION_PRODUCTO");
+      
+      // 1. Subir imágenes
       const uploadedUrls = await Promise.all((newItem.images || []).map(async (img, i) => {
         if (img.startsWith('data:')) {
           const fd = new FormData();
@@ -319,22 +321,36 @@ export default function AdminDashboard() {
         return img;
       }));
 
+      console.log("> IMAGENES_LISTAS_PARA_DB");
+
       const productData = {
         ...newItem,
         images: uploadedUrls.filter(Boolean) as string[],
         colors: newItem.colors || ['#000000']
       };
 
+      // 2. Crear producto en DB
       const res = await createProduct(productData);
+      
       if (res.success && res.data) {
         setLocalProducts(prev => [...prev, res.data as Product]);
-        setNewItem({ name: '', price: '', category: 'T-SHIRTS', images: [], description: '', colors: [], stock: 10 });
+        setNewItem({ 
+          name: '', 
+          price: '', 
+          category: 'T-SHIRTS', 
+          images: [], 
+          description: '', 
+          colors: ['#000000'],
+          stock: 10 
+        });
         sounds.playClick();
+        alert("INYECTADO_CON_EXITO: El producto ya es parte del archivo.");
       } else {
-        alert("FALLA_INYECCIÓN: " + res.error);
+        throw new Error(res.error || "ERROR_DESCONOCIDO_DB");
       }
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error("--- FALLA_SISTEMA_BUNKER ---", err.message);
+      alert("FALLA_CRITICA: " + err.message);
     } finally {
       setIsSubmitting(false);
     }

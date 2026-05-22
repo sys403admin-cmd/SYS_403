@@ -587,17 +587,22 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* Confirmation Modals */}
       <AnimatePresence>
         {(deleteConfirmId || productDeleteId) && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[2000] bg-black/95 backdrop-blur-xl flex items-center justify-center p-8">
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 z-[2000] bg-black/90 flex items-center justify-center p-8"
+          >
             <div className="max-w-md w-full border-t-8 border-urban-red bg-[#0D0D0D] p-10 shadow-2xl space-y-6 text-center">
-               <AlertTriangle size={48} className="text-urban-red mx-auto animate-pulse" />
+               <AlertTriangle size={48} className="text-urban-red mx-auto" />
                <h2 className="text-3xl font-black italic text-white uppercase">PURGAR_DATOS</h2>
                <p className="text-xs font-bold text-white/40 uppercase tracking-widest leading-relaxed">¿Confirmar eliminación permanente del sistema?</p>
                <div className="flex gap-4">
-                  <button onClick={() => { setDeleteConfirmId(null); setProductDeleteId(null); }} className="flex-grow py-4 border border-white/10 text-white font-black uppercase text-[10px]">ABORTAR</button>
-                  <button onClick={() => deleteConfirmId ? deleteOrder(deleteConfirmId) : productDeleteId && handleDeleteProduct(productDeleteId)} className="flex-grow py-4 bg-urban-red text-white font-black uppercase text-[10px]">CONFIRMAR</button>
+                  <button onClick={() => { setDeleteConfirmId(null); setProductDeleteId(null); }} className="flex-grow py-4 border border-white/10 text-white font-black uppercase text-[10px] hover:bg-white/5 transition-colors">ABORTAR</button>
+                  <button onClick={() => deleteConfirmId ? deleteOrder(deleteConfirmId) : productDeleteId && handleDeleteProduct(productDeleteId)} className="flex-grow py-4 bg-urban-red text-white font-black uppercase text-[10px] hover:bg-red-700 transition-colors">CONFIRMAR</button>
                </div>
             </div>
           </motion.div>

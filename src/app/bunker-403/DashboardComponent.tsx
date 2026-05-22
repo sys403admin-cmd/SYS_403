@@ -1,15 +1,16 @@
 'use client';
 
 import React, { useState, useEffect, Suspense, useMemo } from 'react';
-import { products, updateProducts, Product, CustomOrder } from '@/lib/store';
+import { Product, CustomOrder } from '@/lib/store';
 import { 
   Trash2, Plus, Package, MessageSquare, X, Upload, Palette, Target, 
   Zap, ShieldCheck, User, Lock, Terminal, Box, ChevronDown, 
-  ArrowUpRight, Eye, Clock, CheckCircle, Truck, Trash, AlertTriangle 
+  ArrowUpRight, Eye, Clock, CheckCircle, Truck, Trash, AlertTriangle, Loader2 
 } from 'lucide-react';
 import Image from 'next/image';
 import { sounds } from '@/lib/sounds';
 import { supabase } from '@/lib/supabase';
+import { getProducts, createProduct, updateProduct, deleteProduct, uploadDNA } from '@/lib/actions';
 import { motion, AnimatePresence } from 'framer-motion';
 import OrderScene3D from './OrderScene3D';
 
@@ -18,25 +19,47 @@ export default function AdminDashboard() {
   const [password, setPassword] = useState('');
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [lastAttemptTime, setLastAttemptTime] = useState(0);
-  const [localProducts, setLocalProducts] = useState(products);
+  const [localProducts, setLocalProducts] = useState<Product[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [activeTab, setActiveTab] = useState<'catalog' | 'orders'>('orders');
   const [liveOrders, setLiveOrders] = useState<CustomOrder[]>([]);
   const [previewOrder, setPreviewOrder] = useState<CustomOrder | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const [newItem, setNewItem] = useState<Partial<Product>>({ 
     name: '', 
     price: '', 
     category: 'T-SHIRTS', 
     images: [], 
     description: '', 
-    colors: [] 
+    colors: ['#000000'],
+    stock: 10
   });
-  const [colorInput, setColorInput] = useState('#FF0000');
+  const [colorInput, setColorInput] = useState('#000000');
+
+  const addColor = () => {
+    if (colorInput && !newItem.colors?.includes(colorInput)) {
+      setNewItem(prev => ({ ...prev, colors: [...(prev.colors || []), colorInput] }));
+    }
+  };
+
+  const removeColor = (color: string) => {
+    setNewItem(prev => ({ ...prev, colors: prev.colors?.filter(c => c !== color) }));
+  };
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchOrders();
+      fetchInitialProducts();
     }
   }, [isAuthenticated]);
+
+  const fetchInitialProducts = async () => {
+    setIsLoadingProducts(true);
+    const data = await getProducts();
+    setLocalProducts(data);
+    setIsLoadingProducts(false);
+  };
 
   const fetchOrders = async () => {
     const { data, error } = await supabase
@@ -49,6 +72,7 @@ export default function AdminDashboard() {
   };
 
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [productDeleteId, setProductDeleteId] = useState<number | null>(null);
 
   const updateOrderStatus = async (orderId: number, newStatus: string) => {
     sounds.playClick();
@@ -64,14 +88,168 @@ export default function AdminDashboard() {
 
   const deleteOrder = async (orderId: number) => {
     sounds.playStatic();
+    // Optimistic Update: Remove from UI immediately to eliminate perceived lag
+    const previousOrders = [...liveOrders];
+    setLiveOrders(prev => prev.filter(o => o.id !== orderId));
+    setDeleteConfirmId(null);
+
     const { error } = await supabase
       .from('orders')
       .delete()
       .eq('id', orderId);
     
-    if (!error) {
-      setLiveOrders(prev => prev.filter(o => o.id !== orderId));
-      setDeleteConfirmId(null);
+    if (error) {
+      console.error("Error deleting order:", error);
+      // Rollback if DB fails
+      setLiveOrders(previousOrders);
+      alert("FALLA_AL_ELIMINAR: El registro sigue en la base de datos.");
+    } else {
+      sounds.playClick();
+    }
+  };
+
+  const OrderCard = memo(({ order }: { order: CustomOrder }) => {
+    const rawDesigns = typeof order.designs === 'string' ? JSON.parse(order.designs) : order.designs;
+    const isCatalog = order.garmenttype === 'CATALOGO';
+    const designsList = (rawDesigns?.payload || rawDesigns || []) as any[];
+
+    return (
+      <div className="bg-[#0D0D0D] border-t-8 border-urban-red p-6 lg:p-10 flex flex-col gap-8 hover:bg-[#111111] transition-all relative group shadow-2xl">
+        <div className="absolute top-4 right-6 text-[8px] font-black text-white/10 uppercase tracking-widest">#{order.id.toString().slice(-8)}</div>
+        
+        <div className="flex flex-col gap-8">
+          <div className="flex justify-between items-start">
+             <div className="space-y-1">
+                <h3 className="text-4xl font-black uppercase italic text-white group-hover:text-urban-red transition-colors leading-none">{order.name}</h3>
+                <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest">
+                   <span className="text-urban-red">{order.whatsapp}</span>
+                   <span className="text-white/20">|</span>
+                   <span className={isCatalog ? 'text-[#00FF00]' : 'text-white/40'}>
+                     {isCatalog ? 'ORDEN_CATÁLOGO' : `FORJA_${order.garmenttype} // TALLA ${order.size}`}
+                   </span>
+                </div>
+             </div>
+             <div className={`px-4 py-2 border font-black uppercase italic text-[10px] tracking-widest ${getStatusStyle(order.status)}`}>
+                {order.status}
+             </div>
+          </div>
+
+          <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
+             {isCatalog ? (
+                designsList.map((item: any, i: number) => (
+                  <div key={i} className="flex flex-col gap-2 min-w-[100px] bg-white/5 p-2 border border-white/10">
+                     <div className="relative aspect-square bg-black overflow-hidden">
+                       <Image src={item.product.images[0]} alt="" fill className="object-cover" />
+                     </div>
+                     <div className="space-y-1">
+                        <p className="text-[7px] font-black text-[#00FF00] uppercase truncate">{item.product.name}</p>
+                        <p className="text-[6px] font-black text-white/40 uppercase">{item.selectedSize} // {item.quantity} UDS</p>
+                     </div>
+                  </div>
+                ))
+             ) : (
+                designsList.map((d: any, i: number) => (
+                  <div key={i} className="flex flex-col gap-2 min-w-[140px] group/item bg-white/5 p-2 border border-white/10">
+                     <div className="relative aspect-square bg-black overflow-hidden flex items-center justify-center">
+                       {d.url ? (
+                          <>
+                            <Image src={d.url} alt="" fill className="object-contain p-2" />
+                            <button 
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                const response = await fetch(d.url);
+                                const blob = await response.blob();
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `adn_${order.name}_${d.zone}.png`;
+                                a.click();
+                              }}
+                              className="absolute inset-0 bg-urban-red/90 opacity-0 group-hover/item:opacity-100 flex flex-col items-center justify-center transition-opacity gap-2"
+                            >
+                              <ArrowUpRight size={18} />
+                              <span className="text-[8px] font-black">DESCARGAR</span>
+                            </button>
+                          </>
+                       ) : <Zap size={12} className="text-white/10" />}
+                     </div>
+                     <div className="space-y-1">
+                        <p className="text-[8px] font-black text-urban-red uppercase">{d.zone}</p>
+                        <div className="grid grid-cols-3 gap-1 text-[7px] font-mono text-white/40 uppercase">
+                           <span>X:{d.position?.[0]?.toFixed(2)}</span>
+                           <span>Y:{d.position?.[1]?.toFixed(2)}</span>
+                           <span>S:{d.scale?.[0]?.toFixed(2)}</span>
+                        </div>
+                     </div>
+                  </div>
+                ))
+             )}
+          </div>
+          
+          <div className="flex flex-col lg:flex-row gap-6 items-center border-t border-white/5 pt-6">
+             <div className="flex gap-2 shrink-0">
+                {[
+                  { s: 'Pendiente', i: Clock },
+                  { s: 'En Forja', i: Zap },
+                  { s: 'Listo', i: CheckCircle },
+                  { s: 'Entregado', i: Truck }
+                ].map((state) => (
+                  <button 
+                    key={state.s}
+                    onClick={() => updateOrderStatus(order.id, state.s)}
+                    className={`p-3 border transition-all ${order.status === state.s ? 'bg-white text-black border-white' : 'border-white/10 text-white/20 hover:border-white/40'}`}
+                    title={state.s}
+                  >
+                    <state.i size={16} />
+                  </button>
+                ))}
+             </div>
+
+             <div className="flex gap-4 w-full">
+                {!isCatalog && (
+                  <button 
+                    onClick={() => { sounds.playClick(); setPreviewOrder(order); }}
+                    className="flex-grow bg-[#00FF00] text-black py-4 font-black uppercase text-sm hover:bg-white transition-all italic flex items-center justify-center gap-3"
+                  >
+                     VISUALIZAR ADN 3D <Eye size={18} />
+                  </button>
+                )}
+                <a 
+                  href={`https://wa.me/${order.whatsapp.replace(/[^0-9]/g, '')}`}
+                  target="_blank"
+                  className="w-16 bg-[#25D366] flex items-center justify-center hover:opacity-80 transition-opacity"
+                >
+                   <MessageSquare size={24} />
+                </a>
+                <button 
+                  onClick={() => { sounds.playStatic(); setDeleteConfirmId(order.id); }}
+                  className="w-16 border border-white/10 flex items-center justify-center hover:bg-urban-red hover:text-white transition-all"
+                >
+                   <Trash size={24} />
+                </button>
+             </div>
+          </div>
+        </div>
+      </div>
+    );
+  });
+  OrderCard.displayName = 'OrderCard';
+
+  const toggleProductSoldOut = async (product: Product) => {
+    sounds.playClick();
+    const newStatus = !product.soldOut;
+    const res = await updateProduct(product.id, { soldOut: newStatus });
+    if (res.success) {
+      setLocalProducts(prev => prev.map(p => p.id === product.id ? { ...p, soldOut: newStatus } : p));
+    }
+  };
+
+  const handleDeleteProduct = async (id: number) => {
+    sounds.playStatic();
+    const res = await deleteProduct(id);
+    if (res.success) {
+      setLocalProducts(prev => prev.filter(p => p.id !== id));
+      setProductDeleteId(null);
       sounds.playClick();
     }
   };
@@ -108,13 +286,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const sanitize = (str: string) => {
-    return str.replace(/[<>'"/&]/g, (match) => {
-      const map: any = { '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;', '/': '&#47;', '&': '&amp;' };
-      return map[match];
-    }).trim();
-  };
-
   const handleFileAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       Array.from(e.target.files).forEach(file => {
@@ -129,31 +300,44 @@ export default function AdminDashboard() {
     }
   };
 
-  const addColor = () => {
-    if (!newItem.colors?.includes(colorInput)) {
-      setNewItem(prev => ({ ...prev, colors: [...(prev.colors || []), colorInput] }));
-    }
-  };
-
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
     sounds.playClick();
     
-    const product: Product = {
-      ...newItem,
-      id: Date.now(),
-      name: sanitize(newItem.name || 'NUEVA FORJA'),
-      price: sanitize(newItem.price || '$0.00'),
-      category: newItem.category as any,
-      images: newItem.images || [],
-      description: sanitize(newItem.description || ''),
-      colors: newItem.colors || [],
-      soldOut: false
-    } as Product;
-    const updated = [...localProducts, product];
-    setLocalProducts(updated);
-    updateProducts(updated);
-    setNewItem({ name: '', price: '', category: 'T-SHIRTS', images: [], description: '', colors: [] });
+    try {
+      // 1. Subir imágenes a Supabase Storage
+      const uploadedUrls = await Promise.all((newItem.images || []).map(async (img, i) => {
+        if (img.startsWith('data:')) {
+          const fd = new FormData();
+          fd.append('file', img);
+          fd.append('fileName', `product_${Date.now()}_${i}.png`);
+          return await uploadDNA(fd);
+        }
+        return img;
+      }));
+
+      const productData = {
+        ...newItem,
+        images: uploadedUrls.filter(Boolean) as string[],
+        colors: newItem.colors || ['#000000']
+      };
+
+      const res = await createProduct(productData);
+      if (res.success && res.data) {
+        setLocalProducts(prev => [...prev, res.data as Product]);
+        setNewItem({ name: '', price: '', category: 'T-SHIRTS', images: [], description: '', colors: [], stock: 10 });
+        sounds.playClick();
+      } else {
+        alert("FALLA_INYECCIÓN: " + res.error);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isAuthenticated) {
@@ -190,8 +374,8 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col lg:flex-row font-sans selection:bg-urban-red overflow-hidden">
-      {/* Sidebar: El Trono del Sistema */}
-      <div className="w-full lg:w-80 bg-[#050505] border-r-4 border-urban-red p-8 space-y-12 z-20 flex flex-col justify-between h-screen sticky top-0 shrink-0 shadow-[20px_0_100px_rgba(230,57,70,0.1)]">
+      {/* Sidebar */}
+      <div className="w-full lg:w-80 bg-[#050505] border-r-4 border-urban-red p-8 space-y-12 z-20 flex flex-col justify-between lg:h-screen sticky top-0 shrink-0 shadow-[20px_0_100px_rgba(230,57,70,0.1)]">
         <div className="space-y-12">
            <div className="space-y-4 text-center lg:text-left">
               <div className="relative inline-block">
@@ -218,7 +402,7 @@ export default function AdminDashboard() {
            </nav>
         </div>
 
-        <div className="bg-gradient-to-b from-white/5 to-transparent p-6 border-l-4 border-urban-red space-y-4 relative overflow-hidden">
+        <div className="bg-gradient-to-b from-white/5 to-transparent p-6 border-l-4 border-urban-red space-y-4 relative overflow-hidden hidden lg:block">
            <div className="absolute top-0 right-0 w-20 h-20 bg-urban-red opacity-5 rotate-45 translate-x-10 -translate-y-10"></div>
            <div className="flex items-center gap-3 text-urban-red relative z-10">
               <User size={16} />
@@ -231,333 +415,210 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Main Command Center: El Asfalto Visual */}
-      <div className="flex-grow p-8 lg:p-20 overflow-y-auto custom-scrollbar bg-black relative">
-        {/* Matrix Overlay */}
+      {/* Main Command Center */}
+      <div className="flex-grow p-4 lg:p-20 overflow-y-auto custom-scrollbar bg-black relative">
         <div className="fixed inset-0 pointer-events-none matrix-bg opacity-10"></div>
-        <div className="fixed inset-0 pointer-events-none bg-gradient-to-tr from-urban-red/5 via-transparent to-transparent"></div>
 
         {activeTab === 'orders' ? (
-          <div className="space-y-20 relative z-10">
-            <header className="flex flex-col md:flex-row md:items-end justify-between gap-10">
+          <div className="space-y-12 lg:space-y-20 relative z-10">
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
               <div className="space-y-4">
-                <div className="flex items-center gap-6">
-                   <div className="w-16 h-4 bg-urban-red"></div>
-                   <span className="text-urban-red text-[14px] font-black uppercase tracking-[1em]">INCOMING_ADN</span>
+                <div className="flex items-center gap-4">
+                   <div className="w-12 h-3 bg-urban-red"></div>
+                   <span className="text-urban-red text-xs font-black uppercase tracking-[0.5em]">INCOMING_ADN</span>
                 </div>
-                <h1 className="text-8xl md:text-[10rem] font-black uppercase italic tracking-tighter leading-none glitch-text" data-text="PEDIDOS">PEDIDOS<br /><span className="text-stroke text-white/5">SISTEMA</span></h1>
+                <h1 className="text-6xl md:text-9xl font-black uppercase italic tracking-tighter leading-none glitch-text" data-text="PEDIDOS">PEDIDOS<br /><span className="text-stroke text-white/5">SISTEMA</span></h1>
               </div>
             </header>
 
-            <div className="flex flex-col gap-16 max-w-5xl mx-auto">
+            <div className="flex flex-col gap-10 max-w-5xl">
               {liveOrders.length === 0 ? (
-                <div className="h-[50vh] border-8 border-dashed border-white/5 flex flex-col items-center justify-center text-white/5 uppercase tracking-[1em] italic bg-black/40">
-                   <Zap size={100} className="mb-8 animate-pulse" />
-                   <p className="text-2xl font-black">SILENCIO_EN_EL_BARRIO</p>
+                <div className="h-[40vh] border-4 border-dashed border-white/5 flex flex-col items-center justify-center text-white/10 uppercase tracking-[0.5em] italic">
+                   <Zap size={64} className="mb-6 animate-pulse" />
+                   <p className="text-xl font-black">SILENCIO_EN_EL_BARRIO</p>
                 </div>
               ) : (
-                liveOrders.map((order) => (
-                  <div key={order.id} className="bg-[#0D0D0D] border-t-[12px] border-urban-red p-8 lg:p-12 flex flex-col gap-12 hover:bg-[#111111] transition-all shadow-[20px_20px_50px_rgba(0,0,0,0.5)] relative group overflow-hidden">
-                    <div className="absolute top-6 right-8 text-[10px] font-black text-white/20 uppercase tracking-widest italic">#{order.id.toString().slice(-8)}</div>
-                    
-                    <div className="flex flex-col lg:flex-row gap-12">
-                      <div className="flex flex-wrap gap-4 lg:w-[250px] shrink-0">
-                        {(() => {
-                          const raw = typeof order.designs === 'string' ? JSON.parse(order.designs) : order.designs;
-                          const isCatalog = order.garmenttype === 'CATALOGO';
-                          
-                          if (isCatalog) {
-                            // Mostrar imágenes de productos del catálogo con detalles visuales
-                            return Array.isArray(raw) ? raw.map((item: any, i: number) => (
-                              <div key={i} className="flex flex-col gap-2 w-[110px]">
-                                 <div className="relative aspect-square bg-black border-2 border-[#00FF00]/40 overflow-hidden shadow-lg group-hover:border-[#00FF00] transition-colors">
-                                   <Image src={item.product.images[0]} alt="" fill className="object-cover" />
-                                 </div>
-                                 <div className="bg-[#00FF00]/10 px-2 py-1.5 border-l-2 border-[#00FF00] space-y-1">
-                                    <p className="text-[7px] font-black text-[#00FF00] uppercase tracking-tighter truncate">{item.product.name}</p>
-                                    <div className="flex justify-between items-center">
-                                       <span className="text-[6px] font-black text-white/60 uppercase">{item.selectedSize} // {item.quantity} UDS</span>
-                                       <div className="w-2 h-2 border border-white/20" style={{ backgroundColor: item.selectedColor }}></div>
-                                    </div>
-                                 </div>
-                              </div>
-                            )) : null;
-                          } else {
-                            // Mostrar fragmentos de ADN del laboratorio
-                            const designsList = raw.payload || raw;
-                            return Array.isArray(designsList) ? designsList.map((d: any, i: number) => (
-                              <div key={i} className="flex flex-col gap-2 w-[100px]">
-                                 <div className="relative aspect-square bg-black border-2 border-white/10 overflow-hidden shadow-lg flex items-center justify-center group-hover:border-urban-red transition-colors">
-                                   {d.url ? <Image src={d.url} alt="" fill className="object-contain p-1" /> : <Zap size={16} className="text-white/10" />}
-                                 </div>
-                                 <div className="bg-white/5 px-2 py-1 border-l border-urban-red">
-                                    <p className="text-[6px] font-black text-[#00FF00] uppercase tracking-tighter truncate">{d.zone}</p>
-                                 </div>
-                              </div>
-                            )) : null;
-                          }
-                        })()}
-                      </div>
-                      
-                      <div className="flex-grow space-y-8">
-                         <div className="flex justify-between items-start">
-                            <div className="space-y-2 border-b-4 border-white/5 pb-8 flex-grow">
-                               <h3 className="text-5xl font-black uppercase italic text-white leading-none group-hover:text-urban-red transition-colors">{order.name}</h3>
-                               <div className="flex flex-col gap-2 mt-4">
-                                  <div className="flex gap-4 items-center">
-                                     <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">WhatsApp:</span>
-                                     <span className="text-xl font-black text-urban-red">{order.whatsapp}</span>
-                                  </div>
-                                  <div className="flex gap-4 items-center">
-                                     <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Protocolo:</span>
-                                     <span className={`text-xl font-black ${order.garmenttype === 'CATALOGO' ? 'text-[#00FF00]' : 'text-white'}`}>
-                                       {order.garmenttype === 'CATALOGO' ? 'ORDEN_CATÁLOGO' : 'FORJA_ADN_CUSTOM'}
-                                     </span>
-                                  </div>
-                               </div>
-                            </div>
-                            <div className={`ml-8 px-6 py-3 border-2 font-black uppercase italic text-xs tracking-widest ${getStatusStyle(order.status)}`}>
-                               {order.status}
-                            </div>
-                         </div>
-                         
-                         <div className="grid grid-cols-2 gap-10 pt-4">
-                            <div className="space-y-2">
-                               <span className="text-[10px] font-black uppercase tracking-widest text-white/20 italic">Especificaciones</span>
-                               <p className="text-2xl font-black uppercase italic text-white">
-                                 {order.garmenttype === 'CATALOGO' ? 'MÚLTIPLES_ITEMS' : `${order.garmenttype} // TALLA ${order.size}`}
-                               </p>
-                            </div>
-                            <div className="space-y-4">
-                               <span className="text-[10px] font-black uppercase tracking-widest text-white/20 italic">GESTIÓN_ESTADO</span>
-                               <div className="flex flex-wrap gap-2">
-                                  {[
-                                    { s: 'Pendiente', i: Clock },
-                                    { s: 'En Forja', i: Zap },
-                                    { s: 'Listo', i: CheckCircle },
-                                    { s: 'Entregado', i: Truck }
-                                  ].map((state) => (
-                                    <button 
-                                      key={state.s}
-                                      onClick={() => updateOrderStatus(order.id, state.s)}
-                                      className={`p-2 border transition-all ${order.status === state.s ? 'bg-white text-black border-white' : 'border-white/10 text-white/20 hover:border-white/40 hover:text-white'}`}
-                                      title={state.s}
-                                    >
-                                      <state.i size={16} />
-                                    </button>
-                                  ))}
-                               </div>
-                            </div>
-                         </div>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-6">
-                       {order.garmenttype !== 'CATALOGO' && (
-                         <button 
-                           onClick={() => { sounds.playClick(); setPreviewOrder(order); }}
-                           className="flex-grow bg-[#00FF00] text-black py-10 font-black uppercase text-2xl hover:bg-white transition-all italic shadow-[0_0_60px_rgba(0,255,0,0.1)] group/btn relative overflow-hidden"
-                         >
-                            <span className="relative z-10 flex items-center justify-center gap-6">VISUALIZAR ADN <Eye size={32} /></span>
-                            <div className="absolute inset-0 bg-white translate-y-[100%] group-hover/btn:translate-y-0 transition-transform duration-500"></div>
-                         </button>
-                       )}
-                       
-                       <a 
-                         href={`https://wa.me/${order.whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`> SYS_403 // INFORME_TECNICO\n\nSaludos Forjador ${order.name}.\nTu ADN ha sido analizado. Estamos listos para iniciar la forja de tu ${order.garmenttype} (Talla: ${order.size}).\n\nConfirma para proceder con el sellado.`)}`}
-                         target="_blank"
-                         rel="noopener noreferrer"
-                         onMouseEnter={() => sounds.playHover()}
-                         className="w-24 bg-[#25D366] flex items-center justify-center hover:bg-white hover:text-[#25D366] transition-all group/wa shadow-[0_0_30px_rgba(37,211,102,0.2)]"
-                       >
-                          <MessageSquare size={40} className="group-hover:scale-110 transition-transform" />
-                       </a>
-
-                       <button 
-                         onClick={() => { sounds.playStatic(); setDeleteConfirmId(order.id); }}
-                         className="w-24 border-8 border-white/10 flex items-center justify-center hover:bg-urban-red hover:border-urban-red hover:text-white transition-all group/x"
-                       >
-                          <Trash size={40} className="group-hover:scale-110 transition-transform" />
-                       </button>
-                    </div>
-                  </div>
-                ))
+                liveOrders.map((order) => <OrderCard key={order.id} order={order} />)
               )}
             </div>
-
-            {/* Modal de Purga de ADN (Confirmación de Eliminación) */}
-            <AnimatePresence>
-              {deleteConfirmId && (
-                <motion.div 
-                  initial={{ opacity: 0 }} 
-                  animate={{ opacity: 1 }} 
-                  exit={{ opacity: 0 }} 
-                  className="fixed inset-0 z-[2000] bg-black/95 backdrop-blur-xl flex items-center justify-center p-8"
-                >
-                  <div className="max-w-md w-full border-t-[12px] border-urban-red bg-[#0D0D0D] p-12 shadow-[0_0_100px_rgba(230,57,70,0.3)] space-y-8 relative overflow-hidden">
-                    <div className="absolute inset-0 matrix-bg opacity-10 pointer-events-none"></div>
-                    <div className="relative z-10 text-center space-y-6">
-                       <div className="w-20 h-20 bg-urban-red/10 border-2 border-urban-red mx-auto flex items-center justify-center animate-pulse">
-                          <AlertTriangle size={40} className="text-urban-red" />
-                       </div>
-                       <div className="space-y-2">
-                          <h2 className="text-4xl font-black italic tracking-tighter text-white">PURGAR_REGISTRO</h2>
-                          <p className="text-[10px] font-black text-urban-red uppercase tracking-[0.5em]">Protocolo de Borrado Permanente</p>
-                       </div>
-                       <p className="text-sm font-bold text-white/40 leading-relaxed uppercase tracking-widest">
-                          ¿ESTÁS SEGURO DE ELIMINAR ESTE ADN? ESTA ACCIÓN NO SE PUEDE DESHACER EN EL BÚNKER.
-                       </p>
-                       <div className="flex gap-4 pt-4">
-                          <button 
-                            onClick={() => { sounds.playClick(); setDeleteConfirmId(null); }}
-                            className="flex-grow py-5 bg-white/5 border-2 border-white/10 text-white font-black uppercase tracking-widest text-xs hover:bg-white/10 transition-all"
-                          >
-                             ABORTAR
-                          </button>
-                          <button 
-                            onClick={() => deleteOrder(deleteConfirmId)}
-                            className="flex-grow py-5 bg-urban-red text-white font-black uppercase tracking-widest text-xs hover:bg-white hover:text-black transition-all shadow-[0_0_30px_rgba(230,57,70,0.5)]"
-                          >
-                             CONFIRMAR_BORRADO
-                          </button>
-                       </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Modal de Previsualización 3D Matrix */}
-            <AnimatePresence>
-              {previewOrder && (
-                <motion.div 
-                  initial={{ opacity: 0 }} 
-                  animate={{ opacity: 1 }} 
-                  exit={{ opacity: 0 }} 
-                  className="fixed inset-0 z-[1000] bg-black/90 backdrop-blur-2xl flex items-center justify-center p-12"
-                >
-                  <div className="relative w-full h-full border-4 border-white/10 bg-black overflow-hidden flex flex-col">
-                    <div className="flex justify-between items-center p-8 border-b border-white/10 bg-white/5">
-                       <div className="flex items-center gap-6">
-                          <div className="w-4 h-4 bg-[#00FF00] animate-pulse"></div>
-                          <h2 className="text-4xl font-black uppercase italic tracking-tighter">RECONSTRUCCIÓN_3D // {previewOrder.name}</h2>
-                       </div>
-                       <button onClick={() => setPreviewOrder(null)} className="p-4 bg-urban-red text-white hover:rotate-90 transition-transform">
-                          <X size={40} />
-                       </button>
-                    </div>
-                    
-                    <div className="flex-grow relative cursor-crosshair">
-                       <OrderScene3D order={previewOrder} />
-                    </div>
-
-                    <div className="p-8 bg-white/5 border-t border-white/10 flex justify-between items-center font-mono text-[10px] text-[#00FF00]">
-                       <span>&gt; STATUS: ADN_MAPPED_SUCCESSFULLY</span>
-                       <span>&gt; PROTOCOLO: SYS_403_VISTA_CAPO</span>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         ) : (
-          <div className="space-y-32 pb-40 relative z-10">
-            <header className="space-y-6">
-               <div className="flex items-center gap-8">
-                  <div className="w-24 h-6 bg-urban-red"></div>
-                  <span className="text-urban-red text-[16px] font-black uppercase tracking-[1em]">STOCK_ARCHITECTURE</span>
+          <div className="space-y-16 lg:space-y-24 relative z-10">
+            <header className="space-y-4">
+               <div className="flex items-center gap-4">
+                  <div className="w-12 h-2 bg-urban-red"></div>
+                  <span className="text-urban-red text-xs font-black uppercase tracking-[0.5em]">STOCK_ARCHITECTURE</span>
                </div>
-               <h1 className="text-8xl md:text-[12rem] font-black uppercase italic tracking-tighter leading-none">ARCHIVO<br /><span className="text-stroke text-white/5">SISTEMA</span></h1>
+               <h1 className="text-6xl md:text-9xl font-black uppercase italic tracking-tighter leading-none">ARCHIVO<br /><span className="text-stroke text-white/5">SISTEMA</span></h1>
             </header>
 
-            {/* Formulario de Inyección: El Oro del Barrio */}
-            <form onSubmit={handleAdd} className="bg-white text-black p-12 lg:p-24 space-y-20 shadow-[50px_50px_0_#E63946] relative overflow-hidden">
-               <div className="flex items-center gap-8 border-b-8 border-black pb-12">
-                  <div className="w-32 h-32 bg-black text-white flex items-center justify-center shadow-[20px_20px_0_#E63946]">
-                     <Plus size={80} />
-                  </div>
-                  <h3 className="text-6xl font-black uppercase italic tracking-tighter leading-none">INYECTAR NUEVA PIEZA AL ARCHIVO</h3>
+            <form onSubmit={handleAddProduct} className="bg-[#050505] border-l-4 border-urban-red p-6 lg:p-10 space-y-8 shadow-2xl relative overflow-hidden group">
+               <div className="absolute top-0 right-0 w-32 h-32 bg-urban-red/5 -rotate-45 translate-x-16 -translate-y-16"></div>
+               
+               <div className="flex items-center gap-4 border-b border-white/5 pb-4">
+                  <Terminal size={20} className="text-urban-red" />
+                  <h3 className="text-lg font-black uppercase italic tracking-widest text-white">INYECCIÓN_ADN_PRODUCTO</h3>
                </div>
 
-               <div className="grid grid-cols-1 xl:grid-cols-2 gap-24">
-                  <div className="space-y-12">
-                     <div className="space-y-4">
-                        <label className="text-[14px] font-black uppercase tracking-[0.5em] opacity-30 italic">IDENTIDAD DE LA PIEZA</label>
-                        <input type="text" placeholder="NOMBRE DE LA FORJA" className="w-full bg-gray-100 p-8 text-3xl font-black uppercase border-b-8 border-black outline-none focus:bg-gray-200 transition-all" value={newItem.name} onChange={e => setNewItem({...newItem, name: e.target.value})} required />
-                     </div>
-                     <div className="grid grid-cols-2 gap-12">
-                        <div className="space-y-4">
-                           <label className="text-[14px] font-black uppercase tracking-[0.5em] opacity-30 italic">VALOR USD</label>
-                           <input type="text" placeholder="$0.00" className="w-full bg-gray-100 p-8 text-3xl font-black uppercase border-b-8 border-black outline-none focus:bg-gray-200 transition-all" value={newItem.price} onChange={e => setNewItem({...newItem, price: e.target.value})} required />
+               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  {/* Left Column - Main Info */}
+                  <div className="lg:col-span-8 space-y-6">
+                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="md:col-span-3 relative group/input">
+                           <span className="absolute -top-2 left-4 bg-[#050505] px-2 text-[7px] font-black text-urban-red tracking-widest uppercase italic z-10">IDENTIDAD</span>
+                           <input type="text" placeholder="NOMBRE DE LA FORJA" className="w-full bg-white/5 border border-white/10 p-3 text-xs font-black uppercase outline-none focus:border-urban-red transition-all text-white" value={newItem.name} onChange={e => setNewItem({...newItem, name: e.target.value})} required />
                         </div>
-                        <div className="space-y-4">
-                           <label className="text-[14px] font-black uppercase tracking-[0.5em] opacity-30 italic">CORTE</label>
-                           <select className="w-full bg-gray-100 p-8 text-2xl font-black uppercase border-b-8 border-black outline-none cursor-pointer" value={newItem.category} onChange={e => setNewItem({...newItem, category: e.target.value as any})}>
+                        <div className="relative">
+                           <span className="absolute -top-2 left-4 bg-[#050505] px-2 text-[7px] font-black text-urban-red tracking-widest uppercase italic z-10">VALOR</span>
+                           <input type="text" placeholder="$0.00" className="w-full bg-white/5 border border-white/10 p-3 text-xs font-black uppercase outline-none focus:border-urban-red transition-all text-white" value={newItem.price} onChange={e => setNewItem({...newItem, price: e.target.value})} required />
+                        </div>
+                     </div>
+
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="relative">
+                           <span className="absolute -top-2 left-4 bg-[#050505] px-2 text-[7px] font-black text-urban-red tracking-widest uppercase italic z-10">CORTE</span>
+                           <select className="w-full bg-white/5 border border-white/10 p-3 text-[10px] font-black uppercase outline-none cursor-pointer focus:border-urban-red appearance-none text-white" value={newItem.category} onChange={e => setNewItem({...newItem, category: e.target.value as any})}>
                               <option value="T-SHIRTS">T-SHIRT OVERSIZE</option>
                               <option value="HOODIES">HOODIE OVERSIZE</option>
                            </select>
                         </div>
+                        <div className="relative">
+                           <span className="absolute -top-2 left-4 bg-[#050505] px-2 text-[7px] font-black text-urban-red tracking-widest uppercase italic z-10">STOCK_UDS</span>
+                           <input type="number" placeholder="10" className="w-full bg-white/5 border border-white/10 p-3 text-xs font-black uppercase outline-none focus:border-urban-red transition-all text-white" value={newItem.stock} onChange={e => setNewItem({...newItem, stock: parseInt(e.target.value) || 0})} required />
+                        </div>
+                        <div className="flex items-center gap-2">
+                           <input type="color" className="w-8 h-8 bg-transparent border-none cursor-pointer shrink-0" value={colorInput} onChange={e => setColorInput(e.target.value)} />
+                           <button type="button" onClick={addColor} className="flex-grow py-2.5 border border-urban-red text-urban-red text-[8px] font-black uppercase hover:bg-urban-red hover:text-white transition-all">Añadir Croma</button>
+                        </div>
+                     </div>
+
+                     {/* Image Strip */}
+                     <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                           <span className="text-[9px] font-black uppercase tracking-widest text-white/20">MULTIMEDIA_ADN</span>
+                           <span className="text-[8px] font-black text-urban-red">{newItem.images?.length || 0} / 6</span>
+                        </div>
+                        <div className="grid grid-cols-6 gap-2">
+                           {newItem.images?.map((img, i) => (
+                              <div key={i} className="relative aspect-square border border-white/10 bg-black group/img">
+                                 <Image src={img} alt="" fill className="object-cover opacity-60" />
+                                 <button type="button" onClick={() => setNewItem(prev => ({...prev, images: prev.images?.filter((_, idx) => idx !== i)}))} className="absolute inset-0 bg-urban-red/80 opacity-0 group-hover/img:opacity-100 flex items-center justify-center transition-opacity"><X size={14}/></button>
+                              </div>
+                           ))}
+                           {(newItem.images?.length || 0) < 6 && (
+                              <label className="aspect-square border border-dashed border-white/20 flex items-center justify-center cursor-pointer hover:border-urban-red transition-all hover:bg-white/5">
+                                 <Plus size={16} className="text-white/20" />
+                                 <input type="file" multiple className="hidden" onChange={handleFileAdd} />
+                              </label>
+                           )}
+                        </div>
                      </div>
                   </div>
                   
-                  <div className="space-y-12">
-                     <div className="space-y-4">
-                        <label className="text-[14px] font-black uppercase tracking-[0.5em] opacity-30 italic">MANIFIESTO VISUAL (HISTORIA)</label>
-                        <textarea placeholder="DESCRIBE LA ESENCIA DEL BARRIO..." className="w-full h-72 bg-gray-100 p-8 text-xl font-bold uppercase border-4 border-black outline-none resize-none italic leading-relaxed" value={newItem.description} onChange={e => setNewItem({...newItem, description: e.target.value})} required />
+                  {/* Right Column - Manifesto & Colors */}
+                  <div className="lg:col-span-4 space-y-6">
+                     <div className="relative h-[120px]">
+                        <span className="absolute -top-2 left-4 bg-[#050505] px-2 text-[7px] font-black text-urban-red tracking-widest uppercase italic z-10">MANIFIESTO</span>
+                        <textarea placeholder="ESENCIA DEL BARRIO..." className="w-full h-full bg-white/5 border border-white/10 p-3 text-[10px] font-bold uppercase outline-none resize-none italic focus:border-urban-red transition-all text-white custom-scrollbar" value={newItem.description} onChange={e => setNewItem({...newItem, description: e.target.value})} required />
+                     </div>
+                     <div className="bg-white/5 p-3 border border-white/10 min-h-[60px]">
+                        <span className="text-[7px] font-black text-urban-red uppercase tracking-widest block mb-2">CROMA_ACTIVO</span>
+                        <div className="flex flex-wrap gap-1.5">
+                           {newItem.colors?.map(c => (
+                              <div key={c} className="flex items-center gap-1.5 bg-black p-1 border border-white/5 pr-2">
+                                 <div className="w-4 h-4" style={{ backgroundColor: c }}></div>
+                                 <span className="text-[6px] font-mono">{c}</span>
+                                 <button type="button" onClick={() => removeColor(c)} className="text-urban-red hover:text-white transition-colors"><X size={10}/></button>
+                              </div>
+                           ))}
+                        </div>
                      </div>
                   </div>
                </div>
 
-               <div className="pt-12 border-t-8 border-black/5 space-y-12">
-                  <label className="text-[16px] font-black uppercase tracking-[0.8em] text-urban-red italic">MULTIMEDIA DE ALTA FIDELIDAD (MÁX 6)</label>
-                  <div className="flex gap-8 items-center bg-black/5 p-8 border-4 border-dashed border-black/20">
-                     <Upload size={48} className="text-black/20" />
-                     <input type="file" multiple className="text-lg font-black uppercase cursor-pointer" onChange={handleFileAdd} />
-                  </div>
-               </div>
-
-               <button type="submit" className="w-full py-16 bg-black text-white text-5xl font-black uppercase italic tracking-[0.5em] hover:bg-urban-red transition-all shadow-[0_50px_100px_rgba(0,0,0,0.3)]">
-                  PUBLICAR EN EL ARCHIVO
+               <button type="submit" disabled={isSubmitting} className="w-full py-5 bg-white text-black text-[10px] font-black uppercase tracking-[0.4em] italic hover:bg-urban-red hover:text-white transition-all shadow-xl flex items-center justify-center gap-4 group disabled:opacity-50">
+                  {isSubmitting ? (
+                    <>EJECUTANDO_INYECCIÓN... <Loader2 size={14} className="animate-spin" /></>
+                  ) : (
+                    <>PUBLICAR_EN_EL_ARCHIVO <ArrowUpRight size={14} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /></>
+                  )}
                </button>
             </form>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-20">
-               {localProducts.map((p) => (
-                  <div key={p.id} className="bg-[#0A0A0A] border-4 border-white/5 p-10 group relative overflow-hidden hover:border-urban-red transition-all shadow-[50px_50px_100px_rgba(0,0,0,0.5)]">
-                     <div className="absolute top-0 right-0 w-32 h-32 bg-urban-red opacity-10 -rotate-45 translate-x-16 -translate-y-16"></div>
-                     <div className="relative aspect-[3/4] mb-12 overflow-hidden border-8 border-white/5 text-center flex items-center justify-center">
-                        {p.images[0] ? <Image src={p.images[0]} alt="" fill className={`object-cover transition-all duration-1000 group-hover:scale-110 ${p.soldOut ? 'grayscale opacity-20' : 'grayscale group-hover:grayscale-0'}`} /> : <Package size={100} className="text-white/5" />}
-                        <button onClick={() => {
-                           const updated = localProducts.filter(x => x.id !== p.id);
-                           setLocalProducts(updated);
-                           updateProducts(updated);
-                        }} className="absolute top-6 right-6 bg-urban-red text-white p-5 z-10 shadow-2xl hover:rotate-12 transition-transform"><Trash2 size={32}/></button>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
+               {isLoadingProducts ? (
+                 <div className="col-span-full h-40 flex items-center justify-center text-white/10 italic uppercase tracking-[0.5em]">
+                    <Loader2 size={32} className="animate-spin mr-4" /> RECUERANDO_ARCHIVOS...
+                 </div>
+               ) : localProducts.length === 0 ? (
+                 <div className="col-span-full h-40 border border-white/5 flex items-center justify-center text-white/10 italic uppercase tracking-[0.5em]">
+                    ARCHIVO_VACÍO
+                 </div>
+               ) : (
+                 localProducts.map((p) => (
+                  <div key={p.id} className="bg-[#0A0A0A] border border-white/5 p-6 group relative overflow-hidden hover:border-urban-red/50 transition-all shadow-2xl">
+                     <div className="relative aspect-square mb-6 overflow-hidden border border-white/5 bg-black">
+                        {p.images[0] ? <Image src={p.images[0]} alt="" fill className={`object-cover transition-all duration-700 group-hover:scale-105 ${p.soldOut ? 'grayscale opacity-20' : 'grayscale group-hover:grayscale-0'}`} /> : <Package size={48} className="text-white/5" />}
+                        <button onClick={() => setProductDeleteId(p.id)} className="absolute top-4 right-4 bg-urban-red text-white p-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={20}/></button>
                         
                         {p.soldOut && (
                           <div className="absolute inset-0 flex items-center justify-center">
-                             <span className="bg-urban-red text-white text-2xl font-black px-12 py-6 -rotate-12 border-4 border-white shadow-[0_0_50px_rgba(230,57,70,0.5)] uppercase tracking-widest">RECLAMADO</span>
+                             <span className="bg-urban-red text-white text-[10px] font-black px-4 py-2 -rotate-12 border border-white shadow-2xl uppercase tracking-widest">RECLAMADO</span>
                           </div>
                         )}
                      </div>
-                     <div className="space-y-8">
-                        <div className="flex justify-between items-end border-b-4 border-white/5 pb-6">
-                           <h4 className="text-4xl font-black uppercase italic tracking-tighter text-white group-hover:text-urban-red transition-colors leading-none">{p.name}</h4>
-                           <span className="text-2xl font-black text-white italic">{p.price}</span>
+                     <div className="space-y-4">
+                        <div className="flex justify-between items-end border-b border-white/5 pb-4">
+                           <div>
+                              <h4 className="text-xl font-black uppercase italic tracking-tighter text-white group-hover:text-urban-red transition-colors leading-none">{p.name}</h4>
+                              <p className="text-[8px] font-black text-white/30 mt-1 uppercase tracking-widest">STOCK: {p.stock} UDS</p>
+                           </div>
+                           <span className="text-lg font-black text-white italic">{p.price}</span>
                         </div>
-                        <button onClick={() => {
-                           const updated = localProducts.map(x => x.id === p.id ? {...x, soldOut: !x.soldOut} : x);
-                           setLocalProducts(updated);
-                           updateProducts(updated);
-                        }} className={`w-full py-6 text-sm font-black uppercase tracking-[0.5em] border-4 transition-all italic ${p.soldOut ? 'bg-urban-red border-urban-red text-white shadow-2xl' : 'border-white/20 text-white/30 hover:border-white hover:text-white'}`}>
-                           {p.soldOut ? 'LIBERAR ADN' : 'MARCAR COMO RECLAMADO'}
+                        <button onClick={() => toggleProductSoldOut(p)} className={`w-full py-3 text-[8px] font-black uppercase tracking-[0.3em] border transition-all italic ${p.soldOut ? 'bg-urban-red border-urban-red text-white' : 'border-white/10 text-white/20 hover:border-white hover:text-white'}`}>
+                           {p.soldOut ? 'LIBERAR_ARCHIVO' : 'MARCAR_AGOTADO'}
                         </button>
                      </div>
                   </div>
-               ))}
+                 ))
+               )}
             </div>
           </div>
         )}
       </div>
+
+      {/* Confirmation Modals */}
+      <AnimatePresence>
+        {(deleteConfirmId || productDeleteId) && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[2000] bg-black/95 backdrop-blur-xl flex items-center justify-center p-8">
+            <div className="max-w-md w-full border-t-8 border-urban-red bg-[#0D0D0D] p-10 shadow-2xl space-y-6 text-center">
+               <AlertTriangle size={48} className="text-urban-red mx-auto animate-pulse" />
+               <h2 className="text-3xl font-black italic text-white uppercase">PURGAR_DATOS</h2>
+               <p className="text-xs font-bold text-white/40 uppercase tracking-widest leading-relaxed">¿Confirmar eliminación permanente del sistema?</p>
+               <div className="flex gap-4">
+                  <button onClick={() => { setDeleteConfirmId(null); setProductDeleteId(null); }} className="flex-grow py-4 border border-white/10 text-white font-black uppercase text-[10px]">ABORTAR</button>
+                  <button onClick={() => deleteConfirmId ? deleteOrder(deleteConfirmId) : productDeleteId && handleDeleteProduct(productDeleteId)} className="flex-grow py-4 bg-urban-red text-white font-black uppercase text-[10px]">CONFIRMAR</button>
+               </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Preview Modal */}
+      <AnimatePresence>
+        {previewOrder && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[1000] bg-black/90 backdrop-blur-2xl flex items-center justify-center p-4">
+            <div className="relative w-full h-full max-w-6xl max-h-[90vh] border border-white/10 bg-black overflow-hidden flex flex-col shadow-2xl">
+              <div className="flex justify-between items-center p-6 border-b border-white/10 bg-white/5">
+                 <h2 className="text-2xl font-black uppercase italic tracking-tighter">RECONSTRUCCIÓN_3D // {previewOrder.name}</h2>
+                 <button onClick={() => setPreviewOrder(null)} className="p-2 bg-urban-red text-white hover:rotate-90 transition-transform"><X size={24} /></button>
+              </div>
+              <div className="flex-grow relative"><OrderScene3D order={previewOrder} /></div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
+

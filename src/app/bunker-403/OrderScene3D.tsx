@@ -29,19 +29,20 @@ function DecalRenderer({ design, targetMesh }: { design: any, targetMesh: THREE.
     const [x, y] = design.position || [0, 0, 0];
     const [sx, sy] = design.scale || [0.3, 0.3, 0.3];
     const r = (design.rotation && design.rotation[2]) || 0;
-    const depth = 2.0;
+    // Profundidad ultra-reducida para evitar sangrado en mangas y cuerpo
+    const depth = 0.1; 
 
     if (design.zone === 'front') {
-      return { pos: [x, y + 0.6, 1.0] as [number, number, number], rot: [0, 0, r] as [number, number, number], s: [sx, sy, depth] as [number, number, number] };
+      return { pos: [x, y + 0.6, 0.5] as [number, number, number], rot: [0, 0, r] as [number, number, number], s: [sx, sy, depth] as [number, number, number] };
     }
     if (design.zone === 'back') {
-      return { pos: [x, y + 0.6, -1.0] as [number, number, number], rot: [0, Math.PI, r] as [number, number, number], s: [sx, sy, depth] as [number, number, number] };
+      return { pos: [x, y + 0.6, -0.5] as [number, number, number], rot: [0, Math.PI, r] as [number, number, number], s: [sx, sy, depth] as [number, number, number] };
     }
     if (design.zone === 'sleeve-l') {
-      return { pos: [-1.0, y + 0.6, x] as [number, number, number], rot: [0, -Math.PI / 2, r] as [number, number, number], s: [sx, sy, depth] as [number, number, number] };
+      return { pos: [-0.5, y + 0.6, x] as [number, number, number], rot: [0, -Math.PI / 2, r] as [number, number, number], s: [sx, sy, depth] as [number, number, number] };
     }
     if (design.zone === 'sleeve-r') {
-      return { pos: [1.0, y + 0.6, -x] as [number, number, number], rot: [0, Math.PI / 2, r] as [number, number, number], s: [sx, sy, depth] as [number, number, number] };
+      return { pos: [0.5, y + 0.6, -x] as [number, number, number], rot: [0, Math.PI / 2, r] as [number, number, number], s: [sx, sy, depth] as [number, number, number] };
     }
     return null;
   };

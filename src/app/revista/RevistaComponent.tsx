@@ -10,9 +10,9 @@ import { sounds } from '@/lib/sounds';
 import { useCart } from '@/lib/cartContext';
 import { getProducts } from '@/lib/actions';
 
-export default function Revista() {
-  const [dbProducts, setDbProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export default function Revista({ initialProducts }: { initialProducts: Product[] }) {
+  const [dbProducts, setDbProducts] = useState<Product[]>(initialProducts || []);
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
@@ -26,25 +26,8 @@ export default function Revista() {
     }
   }, [selectedProduct]);
 
-  React.useEffect(() => {
-    async function loadProducts() {
-      try {
-        const data = await getProducts();
-        if (data && data.length > 0) {
-          setDbProducts(data as Product[]);
-        } else {
-          setDbProducts(localProducts);
-        }
-      } catch (e) {
-        setDbProducts(localProducts);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadProducts();
-  }, []);
-
   const displayProducts = dbProducts.length > 0 ? dbProducts : localProducts;
+
 
   if (isLoading) {
     return (
@@ -186,70 +169,74 @@ export default function Revista() {
                </div>
             </div>
 
-            <div className="flex-grow p-8 lg:p-24 flex flex-col justify-between overflow-y-auto custom-scrollbar bg-black text-white selection:bg-urban-red selection:text-white relative">
+            <div className="flex-grow p-6 lg:p-16 flex flex-col overflow-y-auto custom-scrollbar bg-black text-white selection:bg-urban-red selection:text-white relative">
                <div className="absolute inset-0 pointer-events-none matrix-bg opacity-5"></div>
-               <div className="space-y-12 lg:space-y-20 relative z-10">
+               <div className="space-y-10 lg:space-y-16 relative z-10">
                   <div className="space-y-6 lg:space-y-8">
                      <span className="bg-urban-red text-white text-[9px] lg:text-[11px] font-black uppercase tracking-[0.5em] lg:tracking-[0.8em] px-4 py-2 lg:px-6 lg:py-3 italic shadow-2xl inline-block tech-glow">
                         PIEZA UNICA FORJADA
                      </span>
-                     <h2 className="text-5xl lg:text-9xl font-black uppercase tracking-tighter italic leading-[0.8] border-l-8 lg:border-l-12 border-urban-red pl-6 lg:pl-8 glitch-text" data-text={selectedProduct.name}>
+                     <h2 className="text-4xl lg:text-7xl font-black uppercase tracking-tighter italic leading-[0.9] border-l-8 lg:border-l-12 border-urban-red pl-6 lg:pl-8 glitch-text" data-text={selectedProduct.name}>
                         {selectedProduct.name}
                      </h2>
-                     <p className="text-3xl lg:text-5xl font-black text-urban-red italic tracking-tight underline decoration-4 lg:decoration-8 decoration-white/20 underline-offset-8 lg:underline-offset-16">{selectedProduct.price}</p>
+                     <p className="text-2xl lg:text-4xl font-black text-urban-red italic tracking-tight underline decoration-4 lg:decoration-8 decoration-white/20 underline-offset-8 lg:underline-offset-16">{selectedProduct.price}</p>
                   </div>
 
-                  <div className="space-y-6 lg:space-y-10 border-t-4 lg:border-t-8 border-white/10 pt-8 lg:pt-16">
+                  <div className="space-y-6 border-t-4 lg:border-t-8 border-white/10 pt-8 lg:pt-12">
                      <h4 className="text-[12px] lg:text-[14px] font-black uppercase tracking-[0.4em] lg:tracking-[0.6em] text-[#00FF00] flex items-center gap-3 lg:gap-4">
                         <Terminal size={18} /> MANIFIESTO_VISUAL.txt
                      </h4>
-                     <p className="text-base lg:text-xl uppercase tracking-[0.1em] font-black italic leading-[1.6] lg:leading-[1.8] opacity-90">
-                        {selectedProduct.description}
-                     </p>
-                  </div>
-
-                  <div className="space-y-6 lg:space-y-10 border-t-4 lg:border-t-8 border-white/10 pt-8 lg:pt-16">
-                     <h4 className="text-[12px] lg:text-[14px] font-black uppercase tracking-[0.4em] lg:tracking-[0.6em] text-[#00FF00] flex items-center gap-3 lg:gap-4">
-                        <Maximize2 size={18} /> DIMENSIÓN_ADN (TALLA)
-                     </h4>
-                     <div className="flex gap-4">
-                        {['M', 'L', 'XL'].map((size) => (
-                          <button 
-                            key={size} 
-                            onClick={() => { sounds.playHover(); setSelectedSize(size); }}
-                            className={`flex-grow py-4 text-xs font-black border-2 transition-all ${selectedSize === size ? 'bg-urban-red border-urban-red text-white' : 'border-white/10 text-white/40 hover:border-white/30'}`}
-                          >
-                            {size}
-                          </button>
-                        ))}
+                     <div className="max-h-[30vh] lg:max-h-none overflow-y-auto lg:overflow-visible pr-4 custom-scrollbar">
+                        <p className="text-sm lg:text-lg uppercase tracking-[0.1em] font-black italic leading-[1.6] lg:leading-[1.7] opacity-90 whitespace-pre-wrap">
+                           {selectedProduct.description}
+                        </p>
                      </div>
                   </div>
 
-                  <div className="space-y-6 lg:space-y-10 border-t-4 lg:border-t-8 border-white/10 pt-8 lg:pt-16">
-                     <div className="flex justify-between items-center">
-                        <h4 className="text-[12px] lg:text-[14px] font-black uppercase tracking-[0.4em] lg:tracking-[0.6em] text-[#00FF00] flex items-center gap-3 lg:gap-4">
-                           <Palette size={18} /> PALETA ADN AUTORIZADA
-                        </h4>
-                        <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">
-                           STOCK: <span className={selectedProduct.stock > 0 ? 'text-[#00FF00]' : 'text-urban-red'}>{selectedProduct.stock} UDS</span>
-                        </span>
-                     </div>
-                     <div className="flex flex-wrap gap-4 lg:gap-6">
-                        {selectedProduct.colors.map(color => (
-                          <button 
-                            key={color} 
-                            onClick={() => { sounds.playHover(); setSelectedColor(color); }}
-                            className={`flex flex-col items-center gap-3 lg:gap-4 group transition-all ${selectedColor === color ? 'scale-110' : 'opacity-60'}`}
-                          >
-                             <div className={`w-12 h-12 lg:w-16 lg:h-16 border-4 lg:border-8 shadow-2xl transition-all ${selectedColor === color ? 'border-urban-red rotate-6' : 'border-white/5'}`} style={{ backgroundColor: color }} />
-                             <span className={`text-[8px] lg:text-[10px] font-black uppercase tracking-widest ${selectedColor === color ? 'text-white' : 'opacity-40'}`}>{color}</span>
-                          </button>
-                        ))}
-                     </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10 border-t-4 lg:border-t-8 border-white/10 pt-8 lg:pt-12">
+                    <div className="space-y-6">
+                       <h4 className="text-[12px] lg:text-[14px] font-black uppercase tracking-[0.4em] lg:tracking-[0.6em] text-[#00FF00] flex items-center gap-3 lg:gap-4">
+                          <Maximize2 size={18} /> DIMENSIÓN_ADN
+                       </h4>
+                       <div className="flex gap-3">
+                          {['M', 'L', 'XL'].map((size) => (
+                            <button 
+                              key={size} 
+                              onClick={() => { sounds.playHover(); setSelectedSize(size); }}
+                              className={`flex-grow py-4 text-xs font-black border-2 transition-all ${selectedSize === size ? 'bg-urban-red border-urban-red text-white' : 'border-white/10 text-white/40 hover:border-white/30'}`}
+                            >
+                              {size}
+                            </button>
+                          ))}
+                       </div>
+                    </div>
+
+                    <div className="space-y-6">
+                       <div className="flex justify-between items-center">
+                          <h4 className="text-[12px] lg:text-[14px] font-black uppercase tracking-[0.4em] lg:tracking-[0.6em] text-[#00FF00] flex items-center gap-3 lg:gap-4">
+                             <Palette size={18} /> CROMA ADN
+                          </h4>
+                          <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">
+                             STOCK: <span className={selectedProduct.stock > 0 ? 'text-[#00FF00]' : 'text-urban-red'}>{selectedProduct.stock} UDS</span>
+                          </span>
+                       </div>
+                       <div className="flex flex-wrap gap-3">
+                          {selectedProduct.colors.map(color => (
+                            <button 
+                              key={color} 
+                              onClick={() => { sounds.playHover(); setSelectedColor(color); }}
+                              className={`flex flex-col items-center gap-2 group transition-all ${selectedColor === color ? 'scale-110' : 'opacity-60'}`}
+                            >
+                               <div className={`w-10 h-10 lg:w-12 lg:h-12 border-4 shadow-2xl transition-all ${selectedColor === color ? 'border-urban-red rotate-6' : 'border-white/5'}`} style={{ backgroundColor: color }} />
+                               <span className={`text-[8px] font-black uppercase tracking-widest ${selectedColor === color ? 'text-white' : 'opacity-40'}`}>{color}</span>
+                            </button>
+                          ))}
+                       </div>
+                    </div>
                   </div>
                </div>
 
-               <div className="pt-16 lg:pt-32 space-y-6 lg:space-y-10 relative z-10">
+               <div className="pt-12 lg:pt-20 space-y-6 lg:space-y-8 relative z-10 mt-auto">
                   <button 
                     disabled={selectedProduct.stock === 0 || !selectedColor || !selectedSize}
                     onClick={() => {

@@ -32,9 +32,9 @@ export default function CartDrawer() {
       });
 
       if (res.success) {
-        // Preparar resumen detallado para WhatsApp (Lore-heavy)
+        // Preparar resumen detallado para WhatsApp (Lore-heavy, SIN links de imágenes)
         const itemsList = cart.map((item, index) => 
-          `FRAGMENTO_0${index + 1}: ${item.product.name}\n- Dimensión: ${item.selectedSize}\n- Croma: ${item.selectedColor}\n- Cant: ${item.quantity} Uds\n- Visual: ${item.product.images[0]}`
+          `FRAGMENTO_0${index + 1}: ${item.product.name}\n- Dimensión: ${item.selectedSize}\n- Croma: ${item.selectedColor}\n- Cant: ${item.quantity} Uds`
         ).join('\n\n');
         
         const waMsg = `> *INFORME_DE_EXTRACCIÓN_SYS_403*\n\n*FORJADOR:* ${customer.name}\n*COMMS_WA:* ${customer.whatsapp}\n\n*CONTENIDO_DE_LA_BÓVEDA:*\n${itemsList}\n\n*VALOR_TOTAL_EXTRAÍDO:* $${totalPrice.toFixed(2)}\n\n_El ADN ha sido interceptado. Esperando sellado final en el bunker._`;

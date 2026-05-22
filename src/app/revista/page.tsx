@@ -1,16 +1,11 @@
-'use client';
+import RevistaComponent from './RevistaComponent';
+import { getProducts } from '@/lib/actions';
 
-import dynamic from 'next/dynamic';
+// Forzamos renderizado dinámico para tener siempre data fresca
+export const dynamic = 'force-dynamic';
 
-const RevistaComponent = dynamic(() => import('./RevistaComponent'), { 
-  ssr: false,
-  loading: () => (
-    <div className="min-h-screen bg-black flex items-center justify-center">
-      <div className="w-12 h-12 border-4 border-urban-red border-t-transparent animate-spin"></div>
-    </div>
-  )
-});
-
-export default function RevistaPage() {
-  return <RevistaComponent />;
+export default async function RevistaPage() {
+  const products = await getProducts();
+  
+  return <RevistaComponent initialProducts={products} />;
 }

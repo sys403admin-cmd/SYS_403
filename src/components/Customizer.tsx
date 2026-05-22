@@ -86,11 +86,16 @@ const DecalItem = memo(({ design, targetMesh }: any) => {
   useMemo(() => { 
     if (texture) { 
       const tex = Array.isArray(texture) ? texture[0] : texture;
-      tex.anisotropy = 16; 
-      tex.colorSpace = THREE.SRGBColorSpace; 
-      tex.minFilter = THREE.LinearFilter;
-      tex.magFilter = THREE.LinearFilter;
-      tex.needsUpdate = true;
+      // Configuramos propiedades básicas de la textura para visualización óptima
+      try {
+        tex.anisotropy = 16; 
+        tex.colorSpace = THREE.SRGBColorSpace; 
+        tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
+        tex.needsUpdate = true;
+      } catch (e) {
+        console.warn("Texture config skip", e);
+      }
     } 
   }, [texture]);
 
@@ -98,19 +103,20 @@ const DecalItem = memo(({ design, targetMesh }: any) => {
     const [x, y] = design.position || [0, 0, 0];
     const [sx, sy] = design.scale || [0.3, 0.3, 0.3];
     const r = (design.rotation && design.rotation[2]) || 0;
-    const depth = 2.0;
+    // Profundidad ultra-reducida para evitar sangrado en mangas y cuerpo
+    const depth = 0.1; 
 
     if (design.zone === 'front') {
-      return { pos: [x, y + 0.6, 1.0] as [number, number, number], rot: [0, 0, r] as [number, number, number], s: [sx, sy, depth] as [number, number, number] };
+      return { pos: [x, y + 0.6, 0.5] as [number, number, number], rot: [0, 0, r] as [number, number, number], s: [sx, sy, depth] as [number, number, number] };
     }
     if (design.zone === 'back') {
-      return { pos: [x, y + 0.6, -1.0] as [number, number, number], rot: [0, Math.PI, r] as [number, number, number], s: [sx, sy, depth] as [number, number, number] };
+      return { pos: [x, y + 0.6, -0.5] as [number, number, number], rot: [0, Math.PI, r] as [number, number, number], s: [sx, sy, depth] as [number, number, number] };
     }
     if (design.zone === 'sleeve-l') {
-      return { pos: [-1.0, y + 0.6, x] as [number, number, number], rot: [0, -Math.PI / 2, r] as [number, number, number], s: [sx, sy, depth] as [number, number, number] };
+      return { pos: [-0.5, y + 0.6, x] as [number, number, number], rot: [0, -Math.PI / 2, r] as [number, number, number], s: [sx, sy, depth] as [number, number, number] };
     }
     if (design.zone === 'sleeve-r') {
-      return { pos: [1.0, y + 0.6, -x] as [number, number, number], rot: [0, Math.PI / 2, r] as [number, number, number], s: [sx, sy, depth] as [number, number, number] };
+      return { pos: [0.5, y + 0.6, -x] as [number, number, number], rot: [0, Math.PI / 2, r] as [number, number, number], s: [sx, sy, depth] as [number, number, number] };
     }
     return null;
   };
@@ -278,7 +284,12 @@ export default function Customizer() {
       await submitOrder({ ...formData, garmentType: garment, garmentColor, designs: finalDesigns });
       setLastSubmissionTime(Date.now());
       notify('success', 'ADN RECIBIDO EN EL BUNKER.');
-      const waMsg = `> *NUEVO PEDIDO SYS_403*\n\n*Cliente:* ${formData.name}\n*Email:* ${formData.email}\n*WhatsApp:* ${formData.whatsapp}\n*Prenda:* ${garment}\n*Talla:* ${formData.size}\n*Color:* ${garmentColor}\n\n_El ADN ha sido cargado al bunker. Esperando confirmación._`;
+      
+      const designSummary = finalDesigns.map((d, i) => 
+        `ADN_0${i+1}: [${d.zone.toUpperCase()}] X:${d.position[0].toFixed(2)} Y:${d.position[1].toFixed(2)} S:${d.scale[0].toFixed(2)}`
+      ).join('\n');
+
+      const waMsg = `> *NUEVO_PEDIDO_FORJA_SYS_403*\n\n*CLIENTE:* ${formData.name}\n*EMAIL:* ${formData.email}\n*WHATSAPP:* ${formData.whatsapp}\n\n*ESPECIFICACIONES:*\n- Prenda: ${garment}\n- Talla: ${formData.size}\n- Color: ${garmentColor}\n\n*FRAGMENTOS_INYECTADOS:*\n${designSummary}\n\n_El ADN ha sido cargado al bunker. Esperando sellado final._`;
       const waUrl = `https://wa.me/573011138847?text=${encodeURIComponent(waMsg)}`;
       setTimeout(() => { window.open(waUrl, '_blank'); }, 2000);
       setDesigns([]); resetForm();
@@ -292,29 +303,57 @@ export default function Customizer() {
       </div>
       <div className="flex-grow relative bg-[#050505] p-2 lg:p-8 flex items-center justify-center min-h-[50vh] sm:min-h-[60vh] lg:min-h-0 overflow-hidden">
         <Viewer3D garment={garment} garmentColor={garmentColor} designs={designs} orbitRef={orbitRef} />
-        <div className="absolute top-4 sm:top-8 left-4 sm:left-8 z-20 flex flex-col gap-4">
-           <div className="flex gap-2">
+        
+        {/* Type selector - Keep absolute but more subtle */}
+        <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
+           <div className="flex gap-1.5">
               {['BUSO', 'CAMISA'].map((type) => (
-                <button key={type} onClick={() => setGarment(type as any)} className={`px-3 sm:px-4 py-1.5 sm:py-2 text-[9px] sm:text-[10px] font-black border transition-all ${garment === type ? 'bg-urban-red border-urban-red text-white' : 'bg-white/5 border-white/10 opacity-40 hover:opacity-100'}`}>{type}</button>
+                <button key={type} onClick={() => setGarment(type as any)} className={`px-3 py-1.5 text-[8px] font-black border transition-all ${garment === type ? 'bg-urban-red border-urban-red text-white' : 'bg-black/60 border-white/10 text-white/40'}`}>{type}</button>
               ))}
            </div>
         </div>
-        <div className="absolute bottom-24 sm:bottom-auto sm:top-8 right-4 sm:right-8 z-20 flex flex-col gap-2 sm:gap-3 bg-black/80 backdrop-blur-xl p-3 sm:p-5 border border-white/10 shadow-2xl min-w-[120px] sm:min-w-[180px]">
-           <span className="text-[8px] sm:text-[10px] font-black text-white/20 mb-1 sm:mb-2 text-center border-b border-white/5 pb-1 sm:pb-2 tracking-widest uppercase">Mapeo_ADN</span>
-           <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+
+        {/* Zone Selector - Hidden on mobile, moved to side panel */}
+        <div className="hidden sm:flex absolute top-8 right-8 z-20 flex-col gap-3 bg-black/80 backdrop-blur-xl p-5 border border-white/10 shadow-2xl min-w-[180px]">
+           <span className="text-[10px] font-black text-white/20 mb-2 text-center border-b border-white/5 pb-2 tracking-widest uppercase">Mapeo_ADN</span>
+           <div className="grid grid-cols-2 gap-2">
               {['front', 'back', 'sleeve-l', 'sleeve-r'].map((z) => (
-                <button key={z} onClick={() => focusZone(z)} className={`px-2 sm:px-4 py-2 sm:py-3 text-[7px] sm:text-[9px] font-black uppercase transition-all border-2 ${activeZone === z ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.2)]' : 'border-white/10 text-white/30 hover:border-white/30 hover:bg-white/5'}`}>{z === 'front' ? 'Pecho' : z === 'back' ? 'Espalda' : z === 'sleeve-l' ? 'Manga L' : 'Manga R'}</button>
+                <button key={z} onClick={() => focusZone(z)} className={`px-4 py-3 text-[9px] font-black uppercase transition-all border-2 ${activeZone === z ? 'bg-white text-black border-white' : 'border-white/10 text-white/30 hover:border-white/30'}`}>{z === 'front' ? 'Pecho' : z === 'back' ? 'Espalda' : z === 'sleeve-l' ? 'Manga L' : 'Manga R'}</button>
               ))}
            </div>
         </div>
-        <div className="absolute bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 sm:translate-x-0 sm:left-8 z-20 flex gap-1.5 sm:gap-2 bg-black/40 p-1.5 sm:p-2 border border-white/5 backdrop-blur-md">
+
+        {/* Color Selector - Hidden on mobile, moved to side panel */}
+        <div className="hidden sm:flex absolute bottom-8 left-8 z-20 gap-2 bg-black/40 p-2 border border-white/5 backdrop-blur-md">
            {['#000000', '#FFFFFF', '#F5F5F5', '#D2B48C'].map((c) => (
-             <button key={c} onClick={() => setGarmentColor(c)} className={`w-6 h-6 sm:w-8 sm:h-8 border-2 ${garmentColor === c ? 'border-white scale-110 rotate-45 shadow-[0_0_15px_rgba(255,255,255,0.3)]' : 'border-transparent opacity-40 hover:opacity-100'}`} style={{ backgroundColor: c }} />
+             <button key={c} onClick={() => setGarmentColor(c)} className={`w-8 h-8 border-2 ${garmentColor === c ? 'border-white scale-110 rotate-45' : 'border-transparent opacity-40 hover:opacity-100'}`} style={{ backgroundColor: c }} />
            ))}
         </div>
       </div>
+
+      {/* Side Panel / Controls */}
       <div className="w-full lg:w-[480px] p-6 sm:p-8 lg:p-12 overflow-y-auto custom-scrollbar bg-[#020202] z-30 flex flex-col border-t lg:border-t-0 lg:border-l border-white/5 shrink-0">
         <div className="space-y-8 sm:space-y-10">
+          {/* Mobile Integration: Zones and Colors */}
+          <div className="sm:hidden space-y-8 pb-8 border-b border-white/5">
+             <div className="space-y-4">
+                <span className="text-[10px] font-black text-[#00FF00] tracking-widest uppercase italic">ZONA_INTERVENCIÓN</span>
+                <div className="grid grid-cols-2 gap-2">
+                  {['front', 'back', 'sleeve-l', 'sleeve-r'].map((z) => (
+                    <button key={z} onClick={() => focusZone(z)} className={`py-4 text-[10px] font-black uppercase transition-all border-2 ${activeZone === z ? 'bg-white text-black border-white' : 'border-white/10 text-white/40'}`}>{z === 'front' ? 'Frente' : z === 'back' ? 'Espalda' : z === 'sleeve-l' ? 'Manga L' : 'Manga R'}</button>
+                  ))}
+                </div>
+             </div>
+             <div className="space-y-4">
+                <span className="text-[10px] font-black text-[#00FF00] tracking-widest uppercase italic">CROMA_BASE</span>
+                <div className="flex justify-between bg-white/5 p-4 border border-white/10">
+                  {['#000000', '#FFFFFF', '#F5F5F5', '#D2B48C'].map((c) => (
+                    <button key={c} onClick={() => setGarmentColor(c)} className={`w-12 h-12 border-4 ${garmentColor === c ? 'border-urban-red scale-110' : 'border-transparent'}`} style={{ backgroundColor: c }} />
+                  ))}
+                </div>
+             </div>
+          </div>
+
           <div className="space-y-2">
             <span className="text-[8px] sm:text-[10px] font-black text-urban-red tracking-[0.4em] sm:tracking-[0.5em] uppercase italic">Inyección de Código</span>
             <h3 className="text-4xl sm:text-5xl font-black uppercase italic tracking-tighter leading-none text-white glitch-text" data-text="FORJAR TU ADN">FORJAR TU ADN</h3>

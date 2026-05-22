@@ -48,7 +48,12 @@ export const getMatrixEmailTemplate = (data: any, isInternal: boolean, isCatalog
         </div>
         <div style="margin-top: 15px;">
           <span style="color: ${accentColor}; font-size: 9px; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; display: block; margin-bottom: 10px;">FRAGMENTOS_INYECTADOS:</span>
-          ${data.designs.map((d: any) => `<img src="${d.url}" style="width: 70px; height: 70px; border: 1px solid ${primaryColor}; margin-right: 5px; background: black; object-fit: contain;" />`).join('')}
+          ${Array.isArray(data.designs) ? data.designs.map((d: any) => `
+            <div style="display: inline-block; margin-right: 10px; margin-bottom: 10px; text-align: center;">
+              <img src="${d.url}" style="width: 70px; height: 70px; border: 1px solid ${primaryColor}; background: black; object-fit: contain; display: block;" />
+              <span style="color: ${accentColor}; font-size: 7px; font-weight: bold; text-transform: uppercase;">${d.zone}</span>
+            </div>
+          `).join('') : '<span style="color: #555; font-size: 10px;">SIN_DISEÑOS_DETECTADOS</span>'}
         </div>
       </div>
     `;

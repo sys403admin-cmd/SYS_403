@@ -14,6 +14,8 @@ const initResend = () => {
   return key ? new Resend(key) : null;
 };
 
+import { revalidatePath } from 'next/cache';
+
 export async function getProducts() {
   try {
     const { data, error } = await supabase
@@ -53,6 +55,10 @@ export async function createProduct(product: Partial<Product>) {
       .select();
 
     if (error) throw new Error(`DB_INSERT_ERROR: ${error.message}`);
+    
+    revalidatePath('/revista');
+    revalidatePath('/bunker-403');
+    
     return { success: true, data: data?.[0] };
   } catch (error: any) {
     console.error('CREATE_PRODUCT_FAILURE:', error.message);
@@ -77,6 +83,10 @@ export async function updateProduct(id: number, updates: Partial<Product>) {
       .eq('id', id);
 
     if (error) throw new Error(`DB_UPDATE_ERROR: ${error.message}`);
+    
+    revalidatePath('/revista');
+    revalidatePath('/bunker-403');
+
     return { success: true };
   } catch (error: any) {
     console.error('UPDATE_PRODUCT_FAILURE:', error.message);
@@ -93,6 +103,10 @@ export async function deleteProduct(id: number) {
       .eq('id', id);
 
     if (error) throw new Error(`DB_DELETE_ERROR: ${error.message}`);
+    
+    revalidatePath('/revista');
+    revalidatePath('/bunker-403');
+
     return { success: true };
   } catch (error: any) {
     console.error('DELETE_PRODUCT_FAILURE:', error.message);

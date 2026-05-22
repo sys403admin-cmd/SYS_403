@@ -26,7 +26,8 @@ export default function Revista({ initialProducts }: { initialProducts: Product[
     }
   }, [selectedProduct]);
 
-  const displayProducts = dbProducts.length > 0 ? dbProducts : localProducts;
+  // Sincronización: Siempre usar los productos que vienen de la base de datos
+  const displayProducts = dbProducts;
 
 
   if (isLoading) {
@@ -57,19 +58,25 @@ export default function Revista({ initialProducts }: { initialProducts: Product[
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16 lg:gap-24 relative z-10">
-        {displayProducts.map((product, index) => (
-          <motion.div 
-            key={product.id}
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1, duration: 0.8 }}
-            className="group cursor-crosshair"
-            onClick={() => {
-              sounds.playClick();
-              setSelectedProduct(product);
-              setCurrentImageIndex(0);
-            }}
-          >
+        {displayProducts.length === 0 ? (
+          <div className="col-span-full h-[40vh] border-4 border-dashed border-white/5 flex flex-col items-center justify-center text-white/10 uppercase tracking-[0.5em] italic">
+             <Zap size={64} className="mb-6 animate-pulse" />
+             <p className="text-xl font-black">ARCHIVO_VACÍO_SIN_ADN</p>
+          </div>
+        ) : (
+          displayProducts.map((product, index) => (
+            <motion.div 
+              key={product.id}
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1, duration: 0.8 }}
+              className="group cursor-crosshair"
+              onClick={() => {
+                sounds.playClick();
+                setSelectedProduct(product);
+                setCurrentImageIndex(0);
+              }}
+            >
             <div className="relative aspect-[3/4] overflow-hidden bg-black border-4 border-white/5 group-hover:border-urban-red transition-all duration-700 shadow-2xl group-hover:shadow-[0_40px_80px_rgba(230,57,70,0.3)]">
               {product.images[0] && (
                 <Image 

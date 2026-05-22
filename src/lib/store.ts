@@ -34,30 +34,7 @@ export interface CustomOrder {
 const STORAGE_KEY_PRODUCTS = 'urban_marca_products';
 const STORAGE_KEY_ORDERS = 'urban_marca_orders';
 
-const defaultProducts: Product[] = [
-  { 
-    id: 1, 
-    name: 'Buso Oversize "Medellín Night"', 
-    price: '$55.00', 
-    category: 'HOODIES', 
-    images: ['https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=80&w=800'],
-    description: 'Buso de alto gramaje con estética nocturna. Inspirado en las luces de la ciudad y el movimiento underground.',
-    colors: ['#000000', '#1A1A1A', '#333333'],
-    soldOut: false,
-    stock: 3
-  },
-  { 
-    id: 2, 
-    name: 'Camiseta "Concrete Heart"', 
-    price: '$35.00', 
-    category: 'T-SHIRTS', 
-    images: ['https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=800'],
-    description: 'Camiseta básica pero con corte premium. Representa el corazón de cemento que late en cada barrio.',
-    colors: ['#FFFFFF', '#333333', '#C0C0C0'],
-    soldOut: false,
-    stock: 3
-  }
-];
+const defaultProducts: Product[] = [];
 
 // Helper to get from localStorage safely
 const getStored = (key: string, fallback: any) => {

@@ -310,16 +310,21 @@ export default function AdminDashboard() {
     try {
       console.log("> INICIANDO_INYECCION_PRODUCTO");
       
-      // 1. Subir imágenes
-      const uploadedUrls = await Promise.all((newItem.images || []).map(async (img, i) => {
+      // 1. Subir imágenes (Una por una para mejor control)
+      const uploadedUrls: string[] = [];
+      for (let i = 0; i < (newItem.images || []).length; i++) {
+        const img = newItem.images![i];
         if (img.startsWith('data:')) {
+          console.log(`> SUBIENDO_IMAGEN_${i+1}...`);
           const fd = new FormData();
           fd.append('file', img);
           fd.append('fileName', `product_${Date.now()}_${i}.png`);
-          return await uploadDNA(fd);
+          const url = await uploadDNA(fd);
+          if (url) uploadedUrls.push(url);
+        } else {
+          uploadedUrls.push(img);
         }
-        return img;
-      }));
+      }
 
       console.log("> IMAGENES_LISTAS_PARA_DB");
 

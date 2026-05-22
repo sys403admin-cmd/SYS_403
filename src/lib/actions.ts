@@ -36,8 +36,11 @@ export async function getProducts() {
 
 export async function createProduct(product: Partial<Product>) {
   try {
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceKey) throw new Error('ERROR_DE_CONFIGURACION: Falta SUPABASE_SERVICE_ROLE_KEY en el servidor.');
+
     const supabaseAdmin = getSupabaseAdmin();
-    // Mapeo explícito a minúsculas
+    // Mapeo estricto para asegurar compatibilidad con PostgreSQL
     const dbProduct = {
       name: product.name,
       price: product.price,
@@ -49,19 +52,25 @@ export async function createProduct(product: Partial<Product>) {
       soldout: product.soldOut || false
     };
 
+    console.log(`> INTENTANDO_INSERTAR_DB: ${product.name}`);
     const { data, error } = await supabaseAdmin
       .from('products')
       .insert([dbProduct])
       .select();
 
-    if (error) throw new Error(`DB_INSERT_ERROR: ${error.message}`);
+    if (error) {
+      console.error('DB_INSERT_FAILURE:', error.message);
+      throw new Error(`FALLA_BASE_DE_DATOS: ${error.message}`);
+    }
     
     revalidatePath('/revista');
     revalidatePath('/bunker-403');
+    revalidatePath('/');
     
+    console.log(`> INSERCION_EXITOSA: ID_${data?.[0]?.id}`);
     return { success: true, data: data?.[0] };
   } catch (error: any) {
-    console.error('CREATE_PRODUCT_FAILURE:', error.message);
+    console.error('--- ERROR_CREACION_PRODUCTO ---', error.message);
     return { success: false, error: error.message };
   }
 }
@@ -286,11 +295,14 @@ export async function submitCatalogOrder(orderData: {
 
 export async function uploadDNA(formData: FormData) {
   try {
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceKey) throw new Error('CONFIG_ERROR: Falta SUPABASE_SERVICE_ROLE_KEY.');
+
     const supabaseAdmin = getSupabaseAdmin();
     const fileBase64 = formData.get('file') as string;
     const fileName = formData.get('fileName') as string;
     
-    if (!fileBase64) throw new Error('EL_ARCHIVO_ESTA_VACIO');
+    if (!fileBase64) throw new Error('ARCHIVO_VACIO');
 
     const cleanName = fileName.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
     const filePath = `catalog/${Date.now()}_${cleanName}`;

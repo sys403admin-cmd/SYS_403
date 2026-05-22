@@ -16,7 +16,13 @@ export const supabase = createClient(
 // Cliente de ADMINISTRACIÓN (Solo usar en Server Actions)
 export const getSupabaseAdmin = () => {
   const config = getSupabaseConfig();
-  return createClient(config.url, config.serviceKey, {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!serviceKey) {
+    console.error("ALERTA_BUNKER: SUPABASE_SERVICE_ROLE_KEY no configurada. Las operaciones de escritura fallarán.");
+  }
+
+  return createClient(config.url, serviceKey || config.anonKey, {
     auth: { persistSession: false }
   });
 };

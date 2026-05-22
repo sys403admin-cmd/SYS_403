@@ -125,7 +125,8 @@ export default function Revista({ initialProducts }: { initialProducts: Product[
               </div>
             </div>
           </motion.div>
-        ))}
+        ))
+      )}
       </div>
 
       <AnimatePresence>

@@ -25,6 +25,16 @@ export default function AdminDashboard() {
   const [liveOrders, setLiveOrders] = useState<CustomOrder[]>([]);
   const [previewOrder, setPreviewOrder] = useState<CustomOrder | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [notification, setNotification] = useState<{message: string, type: 'success' | 'error' | 'info'} | null>(null);
+
+  const showSystemMessage = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setNotification({ message, type });
+    // Sonidos automáticos según el tipo
+    if (type === 'error') sounds.playStatic();
+    else sounds.playClick();
+    
+    setTimeout(() => setNotification(null), 5000);
+  };
   
   const [newItem, setNewItem] = useState<Partial<Product>>({ 
     name: '', 
@@ -102,7 +112,7 @@ export default function AdminDashboard() {
       console.error("Error deleting order:", error);
       // Rollback if DB fails
       setLiveOrders(previousOrders);
-      alert("FALLA_AL_ELIMINAR: El registro sigue en la base de datos.");
+      showSystemMessage("FALLA_AL_ELIMINAR: El registro sigue en la base de datos.", 'error');
     } else {
       sounds.playClick();
     }
@@ -250,11 +260,10 @@ export default function AdminDashboard() {
     if (res.success) {
       setLocalProducts(prev => prev.filter(p => p.id !== id));
       setProductDeleteId(null);
-      sounds.playClick();
-      alert("SISTEMA_LIMPIO: Producto eliminado permanentemente.");
+      showSystemMessage("SISTEMA_LIMPIO: Producto eliminado permanentemente.", 'success');
     } else {
       console.error("FALLA_PURGA_PRODUCTO:", res.error);
-      alert(`FALLA_CRITICA_AL_ELIMINAR: ${res.error}`);
+      showSystemMessage(`FALLA_CRITICA_AL_ELIMINAR: ${res.error}`, 'error');
     }
   };
 
@@ -281,10 +290,9 @@ export default function AdminDashboard() {
       setIsAuthenticated(true);
     } else {
       setLoginAttempts(prev => prev + 1);
-      sounds.playStatic();
-      alert(`ACCESO DENEGADO. INTENTO ${loginAttempts + 1}/3 REGISTRADO.`);
+      showSystemMessage(`ACCESO DENEGADO. INTENTO ${loginAttempts + 1}/3 REGISTRADO.`, 'error');
       if (loginAttempts >= 2) {
-        alert("SISTEMA BLOQUEADO TEMPORALMENTE.");
+        showSystemMessage("SISTEMA BLOQUEADO TEMPORALMENTE.", 'error');
         setLastAttemptTime(now + 30000);
       }
     }
@@ -295,7 +303,7 @@ export default function AdminDashboard() {
       const MAX_SIZE = 4 * 1024 * 1024; // 4MB límite de Vercel
       Array.from(e.target.files).forEach(file => {
         if (file.size > MAX_SIZE) {
-          alert(`ARCHIVO_DEMASIADO_GRANDE: "${file.name}" supera los 4MB. Redúcelo antes de subir.`);
+          showSystemMessage(`ARCHIVO_DEMASIADO_GRANDE: "${file.name}" supera los 4MB. Redúcelo antes de subir.`, 'error');
           return;
         }
         const reader = new FileReader();
@@ -357,14 +365,13 @@ export default function AdminDashboard() {
           colors: ['#000000'],
           stock: 10 
         });
-        sounds.playClick();
-        alert("INYECTADO_CON_EXITO: El producto ya es parte del archivo.");
+        showSystemMessage("INYECTADO_CON_EXITO: El producto ya es parte del archivo.", 'success');
       } else {
         throw new Error(res.error || "ERROR_DESCONOCIDO_DB");
       }
     } catch (err: any) {
       console.error("--- FALLA_SISTEMA_BUNKER ---", err.message);
-      alert("FALLA_CRITICA: " + err.message);
+      showSystemMessage("FALLA_CRITICA: " + err.message, 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -649,6 +656,42 @@ export default function AdminDashboard() {
                  <button onClick={() => setPreviewOrder(null)} className="p-2 bg-urban-red text-white hover:rotate-90 transition-transform"><X size={24} /></button>
               </div>
               <div className="flex-grow relative"><OrderScene3D order={previewOrder} /></div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Sistema de Notificaciones Estilizado */}
+      <AnimatePresence>
+        {notification && (
+          <motion.div 
+            initial={{ opacity: 0, x: 100, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 100, scale: 0.9 }}
+            className={`fixed top-8 right-8 z-[3000] p-6 border-l-8 shadow-2xl backdrop-blur-xl flex items-center gap-6 min-w-[320px] ${
+              notification.type === 'error' ? 'bg-red-950/80 border-urban-red' : 
+              notification.type === 'success' ? 'bg-green-950/80 border-[#00FF00]' : 
+              'bg-zinc-900/80 border-white'
+            }`}
+          >
+            <div className={`p-3 rounded-full ${
+              notification.type === 'error' ? 'bg-urban-red text-white' : 
+              notification.type === 'success' ? 'bg-[#00FF00] text-black' : 
+              'bg-white text-black'
+            }`}>
+              {notification.type === 'error' ? <AlertTriangle size={24} /> : 
+               notification.type === 'success' ? <CheckCircle size={24} /> : 
+               <Terminal size={24} />}
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 italic">
+                {notification.type === 'error' ? 'FALLA_SISTEMA' : 
+                 notification.type === 'success' ? 'OPERACION_EXITOSA' : 
+                 'LOGS_BUNKER'}
+              </p>
+              <p className="text-sm font-black uppercase italic tracking-tighter">
+                {notification.message}
+              </p>
             </div>
           </motion.div>
         )}

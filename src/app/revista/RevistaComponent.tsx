@@ -14,6 +14,7 @@ export default function Revista({ initialProducts }: { initialProducts: Product[
   const [dbProducts, setDbProducts] = useState<Product[]>(initialProducts || []);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [activeCategory, setActiveCategory] = useState<'ALL' | 'T-SHIRTS' | 'HOODIES'>('ALL');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
@@ -27,7 +28,9 @@ export default function Revista({ initialProducts }: { initialProducts: Product[
   }, [selectedProduct]);
 
   // Sincronización: Siempre usar los productos que vienen de la base de datos
-  const displayProducts = dbProducts;
+  const displayProducts = dbProducts.filter(p => 
+    activeCategory === 'ALL' ? true : p.category === activeCategory
+  );
 
 
   if (isLoading) {
@@ -55,6 +58,37 @@ export default function Revista({ initialProducts }: { initialProducts: Product[
         <p className="text-[12px] md:text-[14px] uppercase tracking-[0.3em] font-bold opacity-60 max-w-2xl leading-relaxed italic border-l-2 border-urban-red pl-6">
           Piezas únicas forjadas bajo demanda. Una vez que un diseño encuentra dueño, el ADN se borra del sistema para siempre.
         </p>
+
+        {/* Filtros de Categoría */}
+        <div className="flex flex-wrap gap-4 pt-10">
+          {[
+            { id: 'ALL', label: 'TODO_EL_ARCHIVO' },
+            { id: 'T-SHIRTS', label: 'T-SHIRTS' },
+            { id: 'HOODIES', label: 'HOODIES' }
+          ].map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => {
+                sounds.playHover();
+                setActiveCategory(cat.id as any);
+              }}
+              className={`px-8 py-3 text-[10px] font-black uppercase tracking-[0.3em] italic transition-all relative overflow-hidden group ${
+                activeCategory === cat.id 
+                  ? 'bg-urban-red text-white shadow-[0_0_30px_rgba(230,57,70,0.5)] border-transparent' 
+                  : 'bg-white/5 text-white/40 border border-white/10 hover:border-urban-red hover:text-white'
+              }`}
+            >
+              <span className="relative z-10">{cat.label}</span>
+              {activeCategory === cat.id && (
+                <motion.div 
+                  layoutId="activeTab"
+                  className="absolute inset-0 bg-urban-red -z-0"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+            </button>
+          ))}
+        </div>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-16 lg:gap-24 relative z-10">

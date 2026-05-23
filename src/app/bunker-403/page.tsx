@@ -1,16 +1,8 @@
-'use client';
+import BunkerClient from './BunkerClient';
 
-import dynamic from 'next/dynamic';
-
-const DashboardComponent = dynamic(() => import('./DashboardComponent'), { 
-  ssr: false,
-  loading: () => (
-    <div className="min-h-screen bg-black flex items-center justify-center">
-      <div className="w-12 h-12 border-4 border-urban-red border-t-transparent animate-spin"></div>
-    </div>
-  )
-});
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default function AdminPage() {
-  return <DashboardComponent />;
+  return <BunkerClient />;
 }

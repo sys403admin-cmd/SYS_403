@@ -49,7 +49,6 @@ export async function createProduct(product: Partial<Product>) {
       images: product.images,
       description: product.description,
       colors: product.colors,
-      stock: product.stock || 0,
       soldout: product.soldOut || false
     };
 
@@ -215,35 +214,9 @@ export async function submitCatalogOrder(orderData: {
   try {
     const supabaseAdmin = getSupabaseAdmin();
     const resend = initResend();
-    const { customer, items, total } = orderData;
+    const { customer, items } = orderData;
 
-    // 1. Descontar Stock con Validación de Servidor
-    for (const item of items) {
-      const { data: currentProduct, error: fetchErr } = await supabaseAdmin
-        .from('products')
-        .select('stock')
-        .eq('id', item.product.id)
-        .single();
-
-      if (fetchErr) {
-        console.error(`ERROR_FETCH_STOCK [ID:${item.product.id}]:`, fetchErr.message);
-        continue;
-      }
-
-      if (currentProduct) {
-        const newStock = Math.max(0, currentProduct.stock - item.quantity);
-        const { error: updateErr } = await supabaseAdmin
-          .from('products')
-          .update({ stock: newStock })
-          .eq('id', item.product.id);
-        
-        if (updateErr) {
-          console.error(`ERROR_UPDATE_STOCK [ID:${item.product.id}]:`, updateErr.message);
-        }
-      }
-    }
-
-    // 2. Registrar en tabla orders
+    // 1. Registrar en tabla orders
     const dbOrder = {
       name: customer.name,
       email: customer.email,

@@ -20,6 +20,11 @@ export default function Revista({ initialProducts }: { initialProducts: Product[
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const { addToCart } = useCart();
 
+  // Sincronización con las props para actualizaciones en tiempo real tras revalidatePath
+  React.useEffect(() => {
+    setDbProducts(initialProducts);
+  }, [initialProducts]);
+
   React.useEffect(() => {
     if (!selectedProduct) {
       setSelectedColor(null);

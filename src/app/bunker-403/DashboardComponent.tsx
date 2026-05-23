@@ -600,10 +600,9 @@ export default function AdminDashboard() {
                         
                         {p.soldOut && (
                           <div className="absolute inset-0 flex items-center justify-center">
-                             <span className="bg-urban-red text-white text-[10px] font-black px-4 py-2 -rotate-12 border border-white shadow-2xl uppercase tracking-widest">RECLAMADO</span>
+                             <span className="bg-urban-red text-white text-[10px] font-black px-4 py-2 -rotate-12 border border-white shadow-2xl uppercase tracking-widest">AGOTADO</span>
                           </div>
-                        )}
-                     </div>
+                        )}                     </div>
                      <div className="space-y-4">
                         <div className="flex justify-between items-end border-b border-white/5 pb-4">
                            <div>

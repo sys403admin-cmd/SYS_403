@@ -28,7 +28,12 @@ export async function getProducts() {
       console.error('DB_FETCH_PRODUCTS_ERROR:', error.message);
       return [];
     }
-    return data as Product[];
+
+    // Mapeo de soldout (DB) a soldOut (Frontend)
+    return (data || []).map((p: any) => ({
+      ...p,
+      soldOut: p.soldout // Normalizamos para el frontend
+    })) as Product[];
   } catch (e: any) {
     console.error('FETCH_PRODUCTS_EXCEPTION:', e.message);
     return [];

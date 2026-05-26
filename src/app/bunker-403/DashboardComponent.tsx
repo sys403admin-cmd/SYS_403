@@ -43,7 +43,8 @@ export default function AdminDashboard() {
     images: [], 
     description: '', 
     colors: ['#000000'],
-    stock: 10
+    stock: 10,
+    soldOut: false
   });
   const [colorInput, setColorInput] = useState('#000000');
 
@@ -149,7 +150,7 @@ export default function AdminDashboard() {
                 designsList.map((item: any, i: number) => (
                   <div key={i} className="flex flex-col gap-2 min-w-[100px] bg-white/5 p-2 border border-white/10">
                      <div className="relative aspect-square bg-black overflow-hidden">
-                       <Image src={item.product.images[0]} alt="" fill className="object-cover" />
+                       {item.product.images[0] && <Image src={item.product.images[0]} alt="" fill className="object-cover" />}
                      </div>
                      <div className="space-y-1">
                         <p className="text-[7px] font-black text-[#00FF00] uppercase truncate">{item.product.name}</p>
@@ -248,20 +249,31 @@ export default function AdminDashboard() {
   const toggleProductSoldOut = async (product: Product) => {
     sounds.playClick();
     const newStatus = !product.soldOut;
+    
+    // Update local state first (Optimistic)
+    setLocalProducts(prev => prev.map(p => p.id === product.id ? { ...p, soldOut: newStatus } : p));
+    
     const res = await updateProduct(product.id, { soldOut: newStatus });
-    if (res.success) {
-      setLocalProducts(prev => prev.map(p => p.id === product.id ? { ...p, soldOut: newStatus } : p));
+    if (!res.success) {
+      // Rollback if failed
+      setLocalProducts(prev => prev.map(p => p.id === product.id ? { ...p, soldOut: !newStatus } : p));
+      showSystemMessage("ERROR_AL_ACTUALIZAR_STOCK", 'error');
     }
   };
 
   const handleDeleteProduct = async (id: number) => {
     sounds.playStatic();
+    // Optimistic Update
+    const prevProducts = [...localProducts];
+    setLocalProducts(prev => prev.filter(p => p.id !== id));
+    
     const res = await deleteProduct(id);
     if (res.success) {
-      setLocalProducts(prev => prev.filter(p => p.id !== id));
       setProductDeleteId(null);
       showSystemMessage("SISTEMA_LIMPIO: Producto eliminado permanentemente.", 'success');
     } else {
+      // Rollback
+      setLocalProducts(prevProducts);
       console.error("FALLA_PURGA_PRODUCTO:", res.error);
       showSystemMessage(`FALLA_CRITICA_AL_ELIMINAR: ${res.error}`, 'error');
     }
@@ -363,7 +375,8 @@ export default function AdminDashboard() {
           images: [], 
           description: '', 
           colors: ['#000000'],
-          stock: 10 
+          stock: 10,
+          soldOut: false
         });
         showSystemMessage("INYECTADO_CON_EXITO: El producto ya es parte del archivo.", 'success');
       } else {
@@ -698,4 +711,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-

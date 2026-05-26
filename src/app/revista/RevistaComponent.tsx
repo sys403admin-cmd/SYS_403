@@ -233,8 +233,8 @@ export default function Revista({ initialProducts }: { initialProducts: Product[
                      <h4 className="text-[12px] lg:text-[14px] font-black uppercase tracking-[0.4em] lg:tracking-[0.6em] text-[#00FF00] flex items-center gap-3 lg:gap-4">
                         <Terminal size={18} /> MANIFIESTO_VISUAL.txt
                      </h4>
-                     <div className="max-h-[30vh] lg:max-h-none overflow-y-auto lg:overflow-visible pr-4 custom-scrollbar">
-                        <p className="text-sm lg:text-lg uppercase tracking-[0.1em] font-black italic leading-[1.6] lg:leading-[1.7] opacity-90 whitespace-pre-wrap">
+                     <div className="lg:max-h-none pr-4 custom-scrollbar">
+                        <p className="text-base lg:text-lg uppercase tracking-[0.1em] font-black italic leading-[1.6] lg:leading-[1.7] text-white/90 whitespace-pre-wrap">
                            {selectedProduct.description}
                         </p>
                      </div>

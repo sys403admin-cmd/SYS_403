@@ -85,6 +85,7 @@ export default function AdminDashboard() {
 
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [productDeleteId, setProductDeleteId] = useState<number | null>(null);
+  const [showPurgeConfirm, setShowPurgeConfirm] = useState(false);
 
   const updateOrderStatus = async (orderId: number, newStatus: string) => {
     sounds.playClick();
@@ -120,10 +121,14 @@ export default function AdminDashboard() {
     }
   };
 
-  const handlePurgeAllOrders = async () => {
-    if (!confirm("¿PURGAR TODOS LOS PEDIDOS PERMANENTEMENTE?")) return;
-    
+  const handlePurgeAllOrders = () => {
     sounds.playStatic();
+    setShowPurgeConfirm(true);
+  };
+
+  const executePurge = async () => {
+    setShowPurgeConfirm(false);
+    sounds.playClick();
     const res = await purgeAllOrders();
     if (res.success) {
       setLiveOrders([]);
@@ -657,6 +662,33 @@ export default function AdminDashboard() {
       </div>
 
       <AnimatePresence>
+        {showPurgeConfirm && (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            className="fixed inset-0 z-[3000] bg-black/95 flex items-center justify-center p-8 backdrop-blur-xl"
+          >
+            <div className="max-w-xl w-full border-t-8 border-urban-red bg-[#050505] p-12 shadow-[0_0_100px_rgba(230,57,70,0.3)] relative overflow-hidden text-center">
+               <div className="absolute top-0 right-0 p-4 text-[8px] font-mono text-urban-red/20 tracking-widest">PROTOCOL_403_PURGE</div>
+               <AlertTriangle size={80} className="text-urban-red mx-auto mb-8 animate-pulse" />
+               <h2 className="text-5xl font-black italic text-white uppercase tracking-tighter mb-4 glitch-text" data-text="ELIMINACIÓN_MASIVA">ELIMINACIÓN_MASIVA</h2>
+               <div className="w-24 h-1 bg-urban-red mx-auto mb-8"></div>
+               <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em] leading-relaxed mb-12 italic">
+                  ADVERTENCIA: ¿Ejecutar limpieza total del archivo de pedidos?<br/>
+                  Esta acción es irreversible y purgará todo el ADN del sistema.
+               </p>
+               <div className="flex gap-6">
+                  <button onClick={() => setShowPurgeConfirm(false)} className="flex-grow py-5 border-2 border-white/5 text-white/30 font-black uppercase text-[10px] tracking-[0.4em] hover:bg-white/5 hover:text-white transition-all">ABORTAR</button>
+                  <button onClick={executePurge} className="flex-grow py-5 bg-urban-red text-white font-black uppercase text-[10px] tracking-[0.4em] hover:bg-red-700 transition-all shadow-[0_20px_40px_rgba(230,57,70,0.4)] relative group overflow-hidden">
+                    <span className="relative z-10">CONFIRMAR_PURGA</span>
+                    <div className="absolute inset-0 bg-white translate-y-full group-hover:translate-y-0 opacity-10 transition-transform"></div>
+                  </button>
+               </div>
+            </div>
+          </motion.div>
+        )}
+
         {(deleteConfirmId || productDeleteId) && (
           <motion.div 
             initial={{ opacity: 0 }} 

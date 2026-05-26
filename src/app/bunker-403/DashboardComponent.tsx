@@ -119,6 +119,19 @@ export default function AdminDashboard() {
     }
   };
 
+  const handlePurgeAllOrders = async () => {
+    if (!confirm("¿PURGAR TODOS LOS PEDIDOS PERMANENTEMENTE?")) return;
+    
+    sounds.playStatic();
+    const res = await purgeAllOrders();
+    if (res.success) {
+      setLiveOrders([]);
+      showSystemMessage("SISTEMA_DEPURADO: Todos los pedidos han sido eliminados.", 'success');
+    } else {
+      showSystemMessage("FALLA_EN_PURGA_MASIVA", 'error');
+    }
+  };
+
   const OrderCard = memo(({ order }: { order: CustomOrder }) => {
     const rawDesigns = typeof order.designs === 'string' ? JSON.parse(order.designs) : order.designs;
     const isCatalog = order.garmenttype === 'CATALOGO';

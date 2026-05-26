@@ -285,18 +285,18 @@ export default function Revista({ initialProducts }: { initialProducts: Product[
 
                <div className="pt-12 lg:pt-20 space-y-6 lg:space-y-8 relative z-10 mt-auto">
                   <button 
-                    disabled={selectedProduct.stock === 0 || !selectedColor || !selectedSize}
+                    disabled={selectedProduct.soldOut || !selectedColor || !selectedSize}
                     onClick={() => {
                       if (selectedProduct && selectedColor && selectedSize) {
                         addToCart(selectedProduct, selectedColor, selectedSize);
                       }
                     }}
-                    className={`w-full py-6 lg:py-10 text-base lg:text-lg font-black uppercase tracking-[0.5em] lg:tracking-[1em] italic transition-all shadow-[0_30px_80px_rgba(255,0,0,0.1)] flex items-center justify-center gap-4 lg:gap-6 group overflow-hidden relative ${selectedProduct.stock === 0 || !selectedColor || !selectedSize ? 'bg-white/10 text-white/20 cursor-not-allowed' : 'bg-white text-black hover:bg-urban-red hover:text-white'}`}
+                    className={`w-full py-6 lg:py-10 text-base lg:text-lg font-black uppercase tracking-[0.5em] lg:tracking-[1em] italic transition-all shadow-[0_30px_80px_rgba(255,0,0,0.1)] flex items-center justify-center gap-4 lg:gap-6 group overflow-hidden relative ${selectedProduct.soldOut || !selectedColor || !selectedSize ? 'bg-white/10 text-white/20 cursor-not-allowed' : 'bg-white text-black hover:bg-urban-red hover:text-white'}`}
                   >
                      <span className="relative z-10">
-                      {selectedProduct.stock === 0 ? 'ADN AGOTADO' : !selectedSize ? 'ELEGIR TALLA' : !selectedColor ? 'ELEGIR COLOR' : 'INYECTAR AL CARRITO'}
+                      {selectedProduct.soldOut ? 'ADN AGOTADO' : !selectedSize ? 'ELEGIR TALLA' : !selectedColor ? 'ELEGIR COLOR' : 'INYECTAR AL CARRITO'}
                      </span>
-                     {selectedProduct.stock > 0 && selectedColor && selectedSize && <ShoppingCart size={24} className="relative z-10 group-hover:scale-125 transition-transform" />}
+                     {!selectedProduct.soldOut && selectedColor && selectedSize && <ShoppingCart size={24} className="relative z-10 group-hover:scale-125 transition-transform" />}
                      <div className="absolute inset-0 bg-urban-red translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
                   </button>
                   <p className="text-[9px] lg:text-[11px] font-black uppercase tracking-[0.4em] lg:tracking-[0.6em] text-center text-white/30 leading-loose">
@@ -308,6 +308,9 @@ export default function Revista({ initialProducts }: { initialProducts: Product[
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
   );
 }
 

@@ -19,7 +19,15 @@ export default function Footer() {
         <div className="flex gap-8 text-[10px] uppercase tracking-[0.2em] font-bold">
           <a href="https://www.instagram.com/sys403.med?igsh=MWc3MzYwM2ZuaG84NQ%3D%3D&utm_source=qr" target="_blank" rel="noopener noreferrer" onMouseEnter={() => sounds.playHover()} className="text-white/40 hover:text-urban-red transition-colors italic">Instagram</a>
           <a href="#" onMouseEnter={() => sounds.playHover()} className="text-white/40 hover:text-urban-red transition-colors italic">TikTok</a>
-          <a href="https://wa.me/573011138847" target="_blank" rel="noopener noreferrer" onMouseEnter={() => sounds.playHover()} className="text-white/40 hover:text-urban-red transition-colors italic">WhatsApp</a>
+          <a 
+            href={`https://wa.me/573011138847?text=${encodeURIComponent("> *PROTOCOLO_DE_CONTACTO_SYS_403*\n\nEy, solicito apertura del bunker. He visto el archivo en la web y quiero inyectar ADN real a mi estilo.\n\n_WEB_INTERCEPT_BY_USER_")}`} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            onMouseEnter={() => sounds.playHover()} 
+            className="text-white/40 hover:text-urban-red transition-colors italic"
+          >
+            WhatsApp
+          </a>
         </div>
 
         <div className="text-right">

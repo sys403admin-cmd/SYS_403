@@ -126,7 +126,7 @@ export default function Revista({ initialProducts }: { initialProducts: Product[
                 />
               )}
               
-              {product.stock === 0 && (
+              {product.soldOut && (
                 <div className="absolute inset-0 flex items-center justify-center z-20">
                    <div className="bg-urban-red text-white font-black text-2xl px-8 py-4 -rotate-12 border-4 border-white shadow-[0_0_50px_rgba(230,57,70,0.6)] uppercase tracking-[0.3em] glitch-text" data-text="AGOTADO">
                       AGOTADO
@@ -135,7 +135,7 @@ export default function Revista({ initialProducts }: { initialProducts: Product[
               )}
 
               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none">
-                 {product.stock > 0 && (
+                 {!product.soldOut && (
                     <div className="w-28 h-28 bg-white rounded-full flex flex-col items-center justify-center border-8 border-black shadow-2xl scale-0 group-hover:scale-100 transition-transform duration-500 delay-100 rotate-12">
                        <Maximize2 size={32} className="text-black mb-1" />
                        <span className="text-[9px] font-black uppercase tracking-widest text-black">INYECTAR</span>
@@ -310,7 +310,3 @@ export default function Revista({ initialProducts }: { initialProducts: Product[
     </div>
   );
 }
-
-  );
-}
-

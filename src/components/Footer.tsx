@@ -17,9 +17,9 @@ export default function Footer() {
         </div>
         
         <div className="flex gap-8 text-[10px] uppercase tracking-[0.2em] font-bold">
-          <a href="#" onMouseEnter={() => sounds.playHover()} className="text-white/40 hover:text-urban-red transition-colors italic">Instagram</a>
+          <a href="https://www.instagram.com/sys403.med?igsh=MWc3MzYwM2ZuaG84NQ%3D%3D&utm_source=qr" target="_blank" rel="noopener noreferrer" onMouseEnter={() => sounds.playHover()} className="text-white/40 hover:text-urban-red transition-colors italic">Instagram</a>
           <a href="#" onMouseEnter={() => sounds.playHover()} className="text-white/40 hover:text-urban-red transition-colors italic">TikTok</a>
-          <a href="#" onMouseEnter={() => sounds.playHover()} className="text-white/40 hover:text-urban-red transition-colors italic">WhatsApp</a>
+          <a href="https://wa.me/573011138847" target="_blank" rel="noopener noreferrer" onMouseEnter={() => sounds.playHover()} className="text-white/40 hover:text-urban-red transition-colors italic">WhatsApp</a>
         </div>
 
         <div className="text-right">

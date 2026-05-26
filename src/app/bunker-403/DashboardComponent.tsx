@@ -11,6 +11,7 @@ import Image from 'next/image';
 import { sounds } from '@/lib/sounds';
 import { supabase } from '@/lib/supabase';
 import { getProducts, createProduct, updateProduct, deleteProduct, uploadDNA } from '@/lib/actions';
+import { purgeAllOrders } from '@/lib/purgeOrders';
 import { motion, AnimatePresence } from 'framer-motion';
 import OrderScene3D from './OrderScene3D';
 

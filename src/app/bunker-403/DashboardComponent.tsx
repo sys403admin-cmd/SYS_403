@@ -335,10 +335,10 @@ export default function AdminDashboard() {
 
   const handleFileAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const MAX_SIZE = 3 * 1024 * 1024; // 3MB límite de seguridad para Vercel
+      const MAX_SIZE = 4.5 * 1024 * 1024; // Límite máximo de Vercel (4.5MB)
       Array.from(e.target.files).forEach(file => {
         if (file.size > MAX_SIZE) {
-          showSystemMessage(`ARCHIVO_DEMASIADO_GRANDE: "${file.name}" supera los 3MB. Redúcelo antes de subir.`, 'error');
+          showSystemMessage(`ARCHIVO_DEMASIADO_GRANDE: "${file.name}" supera los 4.5MB.`, 'error');
           return;
         }
         const reader = new FileReader();

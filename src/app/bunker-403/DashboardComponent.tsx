@@ -10,8 +10,7 @@ import {
 import Image from 'next/image';
 import { sounds } from '@/lib/sounds';
 import { supabase } from '@/lib/supabase';
-import { getProducts, createProduct, updateProduct, deleteProduct, uploadDNA } from '@/lib/actions';
-import { purgeAllOrders } from '@/lib/purgeOrders';
+import { getProducts, createProduct, updateProduct, deleteProduct, uploadDNA, purgeAllOrders } from '@/lib/actions';
 import { motion, AnimatePresence } from 'framer-motion';
 import OrderScene3D from './OrderScene3D';
 

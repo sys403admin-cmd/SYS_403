@@ -331,23 +331,33 @@ export async function uploadDNA(formData: FormData) {
 
 export async function purgeAllOrders() {
   try {
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceKey) {
+      console.error("ERROR_CRITICO: No se puede purgar sin SUPABASE_SERVICE_ROLE_KEY");
+      return { success: false, error: "CONFIG_ERROR: No se detectó llave maestra en el servidor." };
+    }
+
     const supabaseAdmin = getSupabaseAdmin();
-    console.log("> INICIANDO_PURGA_TOTAL_DE_PEDIDOS");
+    console.log("> INICIANDO_PROTOCOLO_DE_PURGA_TOTAL");
     
-    // Eliminar todos los registros de la tabla 'orders'
+    // Usamos un filtro que siempre sea verdadero para borrar todo
     const { error } = await supabaseAdmin
       .from('orders')
       .delete()
-      .neq('id', 0);
+      .not('id', 'is', null); // Borra cualquier registro que tenga un ID (todos)
 
-    if (error) throw error;
+    if (error) {
+      console.error("DB_PURGE_ERROR:", error.message);
+      return { success: false, error: `DB_ERROR: ${error.message}` };
+    }
     
     revalidatePath('/bunker-403');
-    console.log("> PURGA_TOTAL_COMPLETA");
+    console.log("> PURGA_TOTAL_COMPLETA_EXITOSAMENTE");
     return { success: true };
   } catch (error: any) {
-    console.error("--- ERROR_PURGA_MASIVA ---", error.message);
-    return { success: false, error: error.message };
+    const msg = error instanceof Error ? error.message : "Error desconocido en purga";
+    console.error("--- FALLA_SISTEMA_EN_PURGA ---", msg);
+    return { success: false, error: msg };
   }
 }
 

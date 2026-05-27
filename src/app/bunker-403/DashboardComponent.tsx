@@ -128,12 +128,17 @@ export default function AdminDashboard() {
   const executePurge = async () => {
     setShowPurgeConfirm(false);
     sounds.playClick();
-    const res = await purgeAllOrders();
-    if (res.success) {
-      setLiveOrders([]);
-      showSystemMessage("SISTEMA_DEPURADO: Todos los pedidos han sido eliminados.", 'success');
-    } else {
-      showSystemMessage("FALLA_EN_PURGA_MASIVA", 'error');
+    try {
+      const res = await purgeAllOrders();
+      if (res.success) {
+        setLiveOrders([]);
+        showSystemMessage("SISTEMA_DEPURADO: Todos los pedidos han sido eliminados.", 'success');
+      } else {
+        showSystemMessage(`ERROR: ${res.error || "Falla en el servidor"}`, 'error');
+      }
+    } catch (err: any) {
+      console.error("EXCEPCION_EN_PURGA:", err);
+      showSystemMessage("FALLA_CRITICA_DE_RED: No se pudo contactar con el Bunker.", 'error');
     }
   };
 

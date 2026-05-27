@@ -335,10 +335,10 @@ export default function AdminDashboard() {
 
   const handleFileAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const MAX_SIZE = 4 * 1024 * 1024; // 4MB límite de Vercel
+      const MAX_SIZE = 3 * 1024 * 1024; // 3MB límite de seguridad para Vercel
       Array.from(e.target.files).forEach(file => {
         if (file.size > MAX_SIZE) {
-          showSystemMessage(`ARCHIVO_DEMASIADO_GRANDE: "${file.name}" supera los 4MB. Redúcelo antes de subir.`, 'error');
+          showSystemMessage(`ARCHIVO_DEMASIADO_GRANDE: "${file.name}" supera los 3MB. Redúcelo antes de subir.`, 'error');
           return;
         }
         const reader = new FileReader();
@@ -367,9 +367,14 @@ export default function AdminDashboard() {
       for (let i = 0; i < (newItem.images || []).length; i++) {
         const img = newItem.images![i];
         if (img.startsWith('data:')) {
-          console.log(`> SUBIENDO_IMAGEN_${i+1}...`);
+          console.log(`> PREPARANDO_TRANSFERENCIA_BINARIA_IMAGEN_${i+1}...`);
+          
+          // Convertimos base64 a Blob para una transferencia mucho más eficiente (binaria)
+          const response = await fetch(img);
+          const blob = await response.blob();
+          
           const fd = new FormData();
-          fd.append('file', img);
+          fd.append('file', blob, `product_${Date.now()}_${i}.png`);
           fd.append('fileName', `product_${Date.now()}_${i}.png`);
           
           const result = await uploadDNA(fd);

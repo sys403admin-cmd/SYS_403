@@ -287,37 +287,46 @@ export async function submitCatalogOrder(orderData: {
 
 
 export async function uploadDNA(formData: FormData) {
+  console.log("> ACCION_INICIADA: uploadDNA");
   try {
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!serviceKey) {
-      return { success: false, error: 'CONFIG_ERROR: Falta SUPABASE_SERVICE_ROLE_KEY en el servidor.' };
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+    if (!serviceKey || !url) {
+      console.error("ALERTA_CRITICA: Faltan variables de entorno de Supabase.");
+      return { success: false, error: 'SERVER_CONFIG_ERROR: Contacta al administrador.' };
     }
 
     const supabaseAdmin = getSupabaseAdmin();
     const file = formData.get('file');
-    const fileName = formData.get('fileName') as string;
+    const fileName = (formData.get('fileName') as string) || `upload_${Date.now()}.png`;
     
-    if (!file) return { success: false, error: 'ARCHIVO_VACIO' };
+    if (!file) {
+      console.warn("> ERROR: No se recibió ningún archivo.");
+      return { success: false, error: 'ARCHIVO_VACIO' };
+    }
 
     let buffer: Buffer;
     let contentType = 'image/png';
 
-    if (typeof file === 'string' && file.startsWith('data:')) {
+    if (file instanceof Blob) {
+      console.log(`> PROCESANDO_BLOB: ${file.size} bytes`);
+      buffer = Buffer.from(await file.arrayBuffer());
+      contentType = file.type || 'image/png';
+    } else if (typeof file === 'string' && file.startsWith('data:')) {
+      console.log(`> PROCESANDO_BASE64: ${file.length} chars`);
       const base64Data = file.split(',')[1];
       if (!base64Data) return { success: false, error: 'DATA_DE_IMAGEN_CORRUPTA' };
       buffer = Buffer.from(base64Data, 'base64');
-    } else if (file instanceof Blob) {
-      buffer = Buffer.from(await file.arrayBuffer());
-      contentType = file.type;
     } else {
+      console.error("> ERROR: Tipo de archivo no reconocido.");
       return { success: false, error: 'TIPO_DE_ARCHIVO_NO_SOPORTADO' };
     }
 
-    // Limpiar nombre de archivo para evitar problemas en Storage
     const cleanName = fileName.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
     const filePath = `catalog/${Date.now()}_${cleanName}`;
 
-    console.log(`> INICIANDO_SUBIDA_STORAGE: ${filePath}`);
+    console.log(`> STORAGE_UPLOAD_START: ${filePath} (${buffer.length} bytes)`);
     const { error: uploadError } = await supabaseAdmin.storage
       .from('dna-vault')
       .upload(filePath, buffer, { 
@@ -326,19 +335,20 @@ export async function uploadDNA(formData: FormData) {
       });
 
     if (uploadError) {
-      console.error('ERROR_STORAGE_UPLOAD:', uploadError.message);
-      return { success: false, error: `FALLA_STORAGE: ${uploadError.message}` };
+      console.error('> STORAGE_UPLOAD_FAIL:', uploadError.message);
+      return { success: false, error: `DB_STORAGE_FAIL: ${uploadError.message}` };
     }
 
     const { data: { publicUrl } } = supabaseAdmin.storage
       .from('dna-vault')
       .getPublicUrl(filePath);
 
-    console.log(`> SUBIDA_EXITOSA: ${publicUrl}`);
+    console.log(`> STORAGE_UPLOAD_SUCCESS: ${publicUrl}`);
     return { success: true, url: publicUrl };
   } catch (err: any) {
-    console.error('--- ERROR_PROTOCOLO_CARGA ---', err.message);
-    return { success: false, error: err.message };
+    const errorMsg = err instanceof Error ? err.message : "Error fatal desconocido";
+    console.error('--- ACCION_CRASH ---', errorMsg);
+    return { success: false, error: `SERVER_CRASH: ${errorMsg}` };
   }
 }
 

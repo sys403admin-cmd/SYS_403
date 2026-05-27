@@ -289,32 +289,45 @@ export async function submitCatalogOrder(orderData: {
 export async function uploadDNA(formData: FormData) {
   try {
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!serviceKey) throw new Error('CONFIG_ERROR: Falta SUPABASE_SERVICE_ROLE_KEY.');
+    if (!serviceKey) {
+      return { success: false, error: 'CONFIG_ERROR: Falta SUPABASE_SERVICE_ROLE_KEY en el servidor.' };
+    }
 
     const supabaseAdmin = getSupabaseAdmin();
-    const fileBase64 = formData.get('file') as string;
+    const file = formData.get('file');
     const fileName = formData.get('fileName') as string;
     
-    if (!fileBase64) throw new Error('ARCHIVO_VACIO');
+    if (!file) return { success: false, error: 'ARCHIVO_VACIO' };
 
+    let buffer: Buffer;
+    let contentType = 'image/png';
+
+    if (typeof file === 'string' && file.startsWith('data:')) {
+      const base64Data = file.split(',')[1];
+      if (!base64Data) return { success: false, error: 'DATA_DE_IMAGEN_CORRUPTA' };
+      buffer = Buffer.from(base64Data, 'base64');
+    } else if (file instanceof Blob) {
+      buffer = Buffer.from(await file.arrayBuffer());
+      contentType = file.type;
+    } else {
+      return { success: false, error: 'TIPO_DE_ARCHIVO_NO_SOPORTADO' };
+    }
+
+    // Limpiar nombre de archivo para evitar problemas en Storage
     const cleanName = fileName.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
     const filePath = `catalog/${Date.now()}_${cleanName}`;
-    const base64Data = fileBase64.split(',')[1];
-    if (!base64Data) throw new Error('DATA_DE_IMAGEN_CORRUPTA');
-    
-    const buffer = Buffer.from(base64Data, 'base64');
 
     console.log(`> INICIANDO_SUBIDA_STORAGE: ${filePath}`);
-    const { error } = await supabaseAdmin.storage
+    const { error: uploadError } = await supabaseAdmin.storage
       .from('dna-vault')
       .upload(filePath, buffer, { 
-        contentType: 'image/png', 
+        contentType, 
         upsert: true 
       });
 
-    if (error) {
-      console.error('ERROR_STORAGE_UPLOAD:', error.message);
-      throw new Error(`FALLA_STORAGE: ${error.message}`);
+    if (uploadError) {
+      console.error('ERROR_STORAGE_UPLOAD:', uploadError.message);
+      return { success: false, error: `FALLA_STORAGE: ${uploadError.message}` };
     }
 
     const { data: { publicUrl } } = supabaseAdmin.storage
@@ -322,10 +335,10 @@ export async function uploadDNA(formData: FormData) {
       .getPublicUrl(filePath);
 
     console.log(`> SUBIDA_EXITOSA: ${publicUrl}`);
-    return publicUrl;
+    return { success: true, url: publicUrl };
   } catch (err: any) {
     console.error('--- ERROR_PROTOCOLO_CARGA ---', err.message);
-    throw err; // Re-lanzar para que el cliente lo capture
+    return { success: false, error: err.message };
   }
 }
 

@@ -371,8 +371,14 @@ export default function AdminDashboard() {
           const fd = new FormData();
           fd.append('file', img);
           fd.append('fileName', `product_${Date.now()}_${i}.png`);
-          const url = await uploadDNA(fd);
-          if (url) uploadedUrls.push(url);
+          
+          const result = await uploadDNA(fd);
+          
+          if (result.success && result.url) {
+            uploadedUrls.push(result.url);
+          } else {
+            throw new Error(result.error || `Error desconocido en imagen ${i+1}`);
+          }
         } else {
           uploadedUrls.push(img);
         }
